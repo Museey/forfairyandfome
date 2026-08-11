@@ -1,0 +1,256 @@
+// Prisma schema for Fairy & Fome work manager
+// docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  MANAGER // Fairy
+  CREATOR // Fome
+}
+
+enum JobStatus {
+  NEW
+  WAITING_STORYLINE_APPROVAL
+  SHOOTING
+  WAITING_DRAFT
+  DRAFTED
+  POSTED
+  PAID
+}
+
+enum BriefItemType {
+  TEXT
+  PHOTO
+  LINK
+  FILE
+}
+
+enum BriefItemContext {
+  BRIEF
+  STORYLINE
+}
+
+enum TimelinePostType {
+  TEXT
+  PHOTO
+  FILE
+  LINK
+  SYSTEM
+}
+
+enum StorylineStatus {
+  DRAFT
+  SENT
+  APPROVED
+}
+
+enum DocumentType {
+  QUOTATION
+  INVOICE
+  RECEIPT
+}
+
+enum DocumentStatus {
+  DRAFT
+  SENT
+  PAID
+}
+
+enum CheckEventType {
+  CHECK_IN
+  CHECK_OUT
+}
+
+model User {
+  id       String @id @default(cuid())
+  name     String @unique
+  role     Role
+  pinHash  String
+  colorTag String @default("#64FFDA")
+
+  createdAt DateTime @default(now())
+
+  jobsCreated       Job[]              @relation("JobCreatedBy")
+  briefItems        BriefItem[]
+  timelinePosts     TimelinePost[]
+  checkEvents       CheckEvent[]
+  calendarTokens    CalendarToken[]
+  pushSubscriptions PushSubscription[]
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  title       String
+  brandName   String
+  productName String?
+  status      JobStatus @default(NEW)
+
+  storylineSendDate DateTime?
+  shootDate         DateTime?
+  draftSendDate     DateTime?
+  postDate          DateTime?
+
+  createdById String
+  createdBy   User   @relation("JobCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  briefItems    BriefItem[]
+  timelinePosts TimelinePost[]
+  storyline     Storyline?
+  detailsOfWork DetailsOfWork?
+  documents     Document[]
+  checkEvents   CheckEvent[]
+
+  @@index([status])
+}
+
+model BriefItem {
+  id       String           @id @default(cuid())
+  jobId    String
+  job      Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type     BriefItemType
+  context  BriefItemContext @default(BRIEF)
+  content  String?
+  fileUrl  String?
+  groupId  String?
+  authorId String
+  author   User             @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+  @@index([groupId])
+}
+
+model TimelinePost {
+  id            String           @id @default(cuid())
+  jobId         String
+  job           Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  authorId      String
+  author        User             @relation(fields: [authorId], references: [id])
+  type          TimelinePostType
+  body          String?
+  attachmentUrl String?
+  linkUrl       String?
+  groupId       String?
+
+  createdAt DateTime @default(now())
+
+  @@index([jobId, createdAt])
+  @@index([groupId])
+}
+
+model Storyline {
+  id     String          @id @default(cuid())
+  jobId  String          @unique
+  job    Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  scenes Json
+  status StorylineStatus @default(DRAFT)
+
+  sentAt     DateTime?
+  approvedAt DateTime?
+  updatedAt  DateTime  @updatedAt
+}
+
+model DetailsOfWork {
+  id    String @id @default(cuid())
+  jobId String @unique
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  sow           String?
+  location      String?
+  keyMessage    Json?
+  doList        Json?
+  dontList      Json?
+  moodTone      String?
+  dressCode     String?
+  hashtags      String?
+  productImages Json?
+  otherNotes    String?
+
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id                    String         @id @default(cuid())
+  jobId                 String
+  job                   Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type                  DocumentType
+  docNumber             String
+  issueDate             DateTime
+
+  buyerName        String
+  buyerAddress     String?
+  buyerTaxId       String?
+  buyerContactName String?
+  buyerPhone       String?
+  buyerEmail       String?
+
+  lineItems             Json
+  withholdingTaxPercent Float          @default(3)
+  status                DocumentStatus @default(DRAFT)
+  pdfUrl                String?
+
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+}
+
+model CheckEvent {
+  id         String         @id @default(cuid())
+  jobId      String?
+  job        Job?           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+  type       CheckEventType
+  occurredAt DateTime       @default(now())
+
+  @@index([jobId])
+  @@index([userId, occurredAt])
+}
+
+model CalendarToken {
+  token  String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model PushSubscription {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint String @unique
+  p256dh   String
+  auth     String
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model SellerProfile {
+  id              Int    @id @default(1)
+  name            String
+  address         String
+  taxId           String
+  bankName        String
+  bankAccountNo   String
+  bankAccountName String
+  branch          String
+  contactName     String
+  phone           String
+  email           String
+
+  updatedAt DateTime @updatedAt
+}

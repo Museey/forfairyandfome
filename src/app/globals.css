@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+:root {
+  /* Cream background */
+  --color-bg: #faf7ea;
+  --color-bg-soft: #f1e8d8;
+  /* Cards/sections */
+  --color-card: #ffffff;
+  --color-card-hover: #f4e9ec;
+  --color-border: rgba(133, 41, 54, 0.14);
+  --color-border-strong: rgba(133, 41, 54, 0.28);
+  /* Text */
+  --color-text: #3b1620;
+  --color-text-muted: #7a4b54;
+  --color-text-faint: #b08d93;
+  /* Accents */
+  --color-teal: #852936;
+  --color-teal-soft: rgba(133, 41, 54, 0.12);
+  --color-gold: #c5d9e2;
+  --color-gold-soft: rgba(197, 217, 226, 0.35);
+  /* Status */
+  --color-danger: #c23b3b;
+  --color-danger-soft: rgba(194, 59, 59, 0.12);
+
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
+}
+
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-bg-soft: var(--color-bg-soft);
+  --color-card: var(--color-card);
+  --color-card-hover: var(--color-card-hover);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-faint: var(--color-text-faint);
+  --color-teal: var(--color-teal);
+  --color-teal-soft: var(--color-teal-soft);
+  --color-gold: var(--color-gold);
+  --color-gold-soft: var(--color-gold-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
+
+  --font-sans: var(--font-body);
+
+  --radius-card: var(--radius-card);
+  --radius-pill: var(--radius-pill);
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans), "Noto Sans Thai", sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* iOS safe-area helpers */
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0.75rem);
+}
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+}
+.pl-safe {
+  padding-left: max(env(safe-area-inset-left), 0px);
+}
+.pr-safe {
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+
+::selection {
+  background: var(--color-teal-soft);
+  color: var(--color-teal);
+}
+
+/* thin, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
