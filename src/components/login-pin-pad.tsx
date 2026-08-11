@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Delete } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { UserAvatar } from "@/components/user-avatar";
 
 type LoginUser = {
   id: string;
@@ -76,12 +77,7 @@ export function LoginPinPad({ users }: { users: LoginUser[] }) {
             }}
             className="flex flex-col items-center gap-3 rounded-3xl px-2 py-4 transition active:scale-95"
           >
-            <span
-              className="flex h-20 w-20 items-center justify-center rounded-full text-2xl font-semibold text-bg"
-              style={{ backgroundColor: user.colorTag }}
-            >
-              {user.name.slice(0, 1)}
-            </span>
+            <UserAvatar name={user.name} colorTag={user.colorTag} size={80} />
             <span className="text-sm text-text-muted">{user.name}</span>
           </button>
         ))}
@@ -100,12 +96,7 @@ export function LoginPinPad({ users }: { users: LoginUser[] }) {
         }}
         className="mb-6 flex flex-col items-center gap-2"
       >
-        <span
-          className="flex h-14 w-14 items-center justify-center rounded-full text-lg font-semibold text-bg"
-          style={{ backgroundColor: selected.colorTag }}
-        >
-          {selected.name.slice(0, 1)}
-        </span>
+        <UserAvatar name={selected.name} colorTag={selected.colorTag} size={56} />
         <span className="text-sm text-text-muted">{selected.name}</span>
       </button>
 

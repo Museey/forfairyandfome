@@ -1,5 +1,6 @@
 import { FileText, Link as LinkIcon, Settings2, Trash2 } from "lucide-react";
 import { formatDateTime } from "@/lib/date";
+import { UserAvatar } from "@/components/user-avatar";
 import type { FeedItem } from "@/lib/feed";
 
 export function PostItem({
@@ -25,12 +26,7 @@ export function PostItem({
 
   return (
     <div className="flex gap-3 rounded-card border border-border bg-card p-3">
-      <span
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-bg"
-        style={{ backgroundColor: item.author.colorTag }}
-      >
-        {item.author.name.slice(0, 1)}
-      </span>
+      <UserAvatar name={item.author.name} colorTag={item.author.colorTag} size={32} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{item.author.name}</span>

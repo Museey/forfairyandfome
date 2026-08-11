@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LogOut, Settings } from "lucide-react";
+import { UserAvatar } from "@/components/user-avatar";
 
 export function TopBar({
   name,
@@ -27,12 +28,7 @@ export function TopBar({
   return (
     <header className="pt-safe flex items-center justify-between px-5 pb-3">
       <div className="flex items-center gap-3">
-        <span
-          className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-bg"
-          style={{ backgroundColor: colorTag }}
-        >
-          {name.slice(0, 1)}
-        </span>
+        <UserAvatar name={name} colorTag={colorTag} size={36} />
         <div>
           <p className="text-xs text-text-faint">สวัสดี</p>
           <p className="-mt-0.5 text-sm font-medium">{title ?? name}</p>
