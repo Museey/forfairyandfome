@@ -38,6 +38,7 @@ export default async function DocumentDetailPage({
       <div className="flex gap-2">
         <a
           href={`/api/documents/${doc.id}/pdf`}
+          download
           target="_blank"
           rel="noopener noreferrer"
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"

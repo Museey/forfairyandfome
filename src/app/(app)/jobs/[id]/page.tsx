@@ -274,6 +274,7 @@ export default async function JobDetailPage({
         <div className="flex flex-col gap-6 pb-6">
           <a
             href={`/api/details-of-work/${job.id}/pdf`}
+            download
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"
