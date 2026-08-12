@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import type { Role } from "@/generated/prisma/enums";
 
 webpush.setVapidDetails(
   "mailto:admin@fairyandfome.app",
@@ -46,5 +47,19 @@ export async function notifyOtherUsers(excludeUserId: string, payload: PushPaylo
 
 export async function notifyAllUsers(payload: PushPayload) {
   const subscriptions = await prisma.pushSubscription.findMany();
+  await sendToSubscriptions(subscriptions, payload);
+}
+
+export async function notifyUsersByRole(
+  role: Role,
+  payload: PushPayload,
+  excludeUserId?: string,
+) {
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: {
+      user: { role },
+      ...(excludeUserId ? { userId: { not: excludeUserId } } : {}),
+    },
+  });
   await sendToSubscriptions(subscriptions, payload);
 }

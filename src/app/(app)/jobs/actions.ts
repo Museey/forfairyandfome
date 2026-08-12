@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
-import { notifyOtherUsers } from "@/lib/push";
+import { JOB_STATUS_LABEL } from "@/lib/job-status";
+import { notifyOtherUsers, notifyUsersByRole } from "@/lib/push";
 import type { JobStatus } from "@/generated/prisma/enums";
 
 export async function createJob(formData: FormData) {
@@ -37,8 +38,32 @@ export async function createJob(formData: FormData) {
 }
 
 export async function updateJobStatus(jobId: string, status: JobStatus) {
-  await requireCurrentUser();
+  const user = await requireCurrentUser();
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job) throw new Error("ไม่พบงานนี้");
+
   await prisma.job.update({ where: { id: jobId }, data: { status } });
+
+  const shouldNotifyFairy =
+    user.role === "CREATOR" &&
+    job.status !== status &&
+    (status === "WAITING_DRAFT" ||
+      status === "DRAFTED" ||
+      status === "POSTED" ||
+      status === "PAID");
+
+  if (shouldNotifyFairy) {
+    await notifyUsersByRole(
+      "MANAGER",
+      {
+        title: `${job.brandName} · ${job.title}`,
+        body: `${user.name} เปลี่ยนสถานะงานเป็น "${JOB_STATUS_LABEL[status]}"`,
+        url: `/jobs/${jobId}?tab=info`,
+      },
+      user.id,
+    );
+  }
+
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/jobs");
 }
