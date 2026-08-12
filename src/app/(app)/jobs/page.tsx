@@ -15,7 +15,7 @@ function buildQuery(params: Record<string, string | undefined>) {
     if (v) usp.set(k, v);
   }
   const qs = usp.toString();
-  return qs ? `?${qs}` : "";
+  return qs ? `/jobs?${qs}` : "/jobs";
 }
 
 export default async function JobsPage({
