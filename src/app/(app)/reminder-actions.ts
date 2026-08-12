@@ -7,6 +7,8 @@ import { resolvePosts } from "@/lib/post-attachments";
 import { notifyOtherUsers } from "@/lib/push";
 import type { BriefItemType } from "@/generated/prisma/enums";
 
+// Each user has at most one active reminder — posting a new one replaces
+// their previous one rather than adding to a history.
 export async function addReminder(formData: FormData) {
   const user = await requireCurrentUser();
 
@@ -14,34 +16,24 @@ export async function addReminder(formData: FormData) {
   if (resolved.length === 0) return;
 
   const groupId = crypto.randomUUID();
-  await prisma.reminder.createMany({
-    data: resolved.map((item) => ({
-      authorId: user.id,
-      type: item.kind as BriefItemType,
-      content: item.body,
-      fileUrl: item.url,
-      groupId,
-    })),
-  });
+  await prisma.$transaction([
+    prisma.reminder.deleteMany({ where: { authorId: user.id } }),
+    prisma.reminder.createMany({
+      data: resolved.map((item) => ({
+        authorId: user.id,
+        type: item.kind as BriefItemType,
+        content: item.body,
+        fileUrl: item.url,
+        groupId,
+      })),
+    }),
+  ]);
 
   await notifyOtherUsers(user.id, {
     title: "เตือนความจำ",
-    body: `${user.name} ฝากเตือนความจำ`,
+    body: `${user.name} อัปเดตเตือนความจำ`,
     url: "/",
   });
 
-  revalidatePath("/");
-}
-
-export async function deleteReminder(formData: FormData) {
-  await requireCurrentUser();
-  const id = String(formData.get("id") || "");
-  if (!id) return;
-  const { count } = await prisma.reminder.deleteMany({
-    where: { groupId: id },
-  });
-  if (count === 0) {
-    await prisma.reminder.deleteMany({ where: { id } });
-  }
   revalidatePath("/");
 }

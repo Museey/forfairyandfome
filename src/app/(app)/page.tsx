@@ -7,7 +7,7 @@ import { AttendanceStatus } from "@/components/attendance-status";
 import { Composer } from "@/components/timeline/composer";
 import { PostItem } from "@/components/timeline/post-item";
 import { groupFeedRows } from "@/lib/feed";
-import { addReminder, deleteReminder } from "@/app/(app)/reminder-actions";
+import { addReminder } from "@/app/(app)/reminder-actions";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   JOB_STATUS_ORDER,
@@ -23,7 +23,7 @@ export default async function TodayPage() {
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-  const [jobs, statusCounts, allJobsWithDates, todayJobCheckEvents, manager, reminders] =
+  const [jobs, statusCounts, allJobsWithDates, todayJobCheckEvents, users, reminders] =
     await Promise.all([
       prisma.job.findMany({
         orderBy: { updatedAt: "desc" },
@@ -45,12 +45,15 @@ export default async function TodayPage() {
         where: { occurredAt: { gte: todayStart, lt: todayEnd }, jobId: { not: null } },
         include: { user: true, job: true },
       }),
-      prisma.user.findFirst({ where: { role: "MANAGER" } }),
+      prisma.user.findMany(),
       prisma.reminder.findMany({
         include: { author: true },
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       }),
     ]);
+
+  const manager = users.find((u) => u.role === "MANAGER") ?? null;
+  const otherUser = users.find((u) => u.id !== currentUser.id) ?? null;
 
   const managerTodayEvents = manager
     ? await prisma.checkEvent.findMany({
@@ -76,18 +79,23 @@ export default async function TodayPage() {
   const eventsByDay = buildEventsByDay(allJobsWithDates, jobCheckEvents);
   const todayEvents = eventsByDay.get(dateKey(today)) ?? [];
 
-  const reminderFeed = groupFeedRows(
-    reminders.map((r) => ({
-      id: r.id,
-      groupId: r.groupId,
-      type: r.type,
-      body: r.content,
-      attachmentUrl: r.type === "LINK" ? null : r.fileUrl,
-      linkUrl: r.type === "LINK" ? r.fileUrl : null,
-      createdAt: r.createdAt,
-      author: r.author,
-    })),
-  );
+  const reminderRows = reminders.map((r) => ({
+    id: r.id,
+    groupId: r.groupId,
+    authorId: r.authorId,
+    type: r.type,
+    body: r.content,
+    attachmentUrl: r.type === "LINK" ? null : r.fileUrl,
+    linkUrl: r.type === "LINK" ? r.fileUrl : null,
+    createdAt: r.createdAt,
+    author: r.author,
+  }));
+  const myReminder = groupFeedRows(
+    reminderRows.filter((r) => r.authorId === currentUser.id),
+  )[0];
+  const theirReminder = otherUser
+    ? groupFeedRows(reminderRows.filter((r) => r.authorId === otherUser.id))[0]
+    : undefined;
 
   return (
     <div className="flex flex-1 flex-col gap-6 pt-2">
@@ -112,21 +120,6 @@ export default async function TodayPage() {
           lastEventAt={lastManagerEvent?.occurredAt ?? null}
         />
       )}
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-text-muted">เตือนความจำ</h2>
-        <Composer
-          action={addReminder}
-          placeholder="ฝากเตือนความจำ (text / รูป / ไฟล์ / ลิงก์)"
-        />
-        {reminderFeed.length > 0 && (
-          <div className="flex flex-col gap-2.5">
-            {reminderFeed.map((item) => (
-              <PostItem key={item.id} item={item} onDelete={deleteReminder} />
-            ))}
-          </div>
-        )}
-      </section>
 
       <section>
         <div className="mb-2 flex items-center justify-between">
@@ -203,6 +196,34 @@ export default async function TodayPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-text-muted">เตือนความจำ</h2>
+        <div className="rounded-card border border-border bg-card p-3">
+          <p className="mb-2 text-xs font-medium text-text-faint">
+            จาก {otherUser?.name ?? "-"}
+          </p>
+          {theirReminder ? (
+            <PostItem item={theirReminder} />
+          ) : (
+            <p className="text-sm text-text-faint">ยังไม่มีข้อความ</p>
+          )}
+        </div>
+
+        <div className="border-t border-border" />
+
+        <div>
+          <p className="mb-2 text-xs font-medium text-text-faint">
+            ถึง {otherUser?.name ?? "-"}
+          </p>
+          <Composer action={addReminder} placeholder="พิมพ์ข้อความ..." />
+          {myReminder && (
+            <div className="mt-2 opacity-70">
+              <PostItem item={myReminder} />
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
