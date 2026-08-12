@@ -1,6 +1,11 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import path from "path";
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { DocumentType } from "@/generated/prisma/enums";
 import { DOCUMENT_TYPE_LABEL, VAT_PERCENT, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
+
+// Fome signs every outgoing document by default — a real signature can
+// still be added later if the client needs one from someone else.
+const FOME_SIGNATURE_PATH = path.join(process.cwd(), "public/signatures/fome.png");
 
 const INK = "#16213E";
 const MUTED = "#6B7280";
@@ -140,6 +145,12 @@ const styles = StyleSheet.create({
   signatureBlock: {
     width: 200,
   },
+  signatureImage: {
+    width: 110,
+    height: 25,
+    alignSelf: "center",
+    marginTop: 8,
+  },
   signatureLine: {
     borderTopWidth: 1,
     borderTopColor: MUTED,
@@ -270,7 +281,11 @@ export function DocumentPdf({
 
         <View style={styles.signaturesRow}>
           <View style={styles.signatureBlock}>
-            <Text style={styles.signatureLine}>ผู้รับเงิน</Text>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <Image src={FOME_SIGNATURE_PATH} style={styles.signatureImage} />
+            <Text style={[styles.signatureLine, { marginTop: 4 }]}>
+              ผู้รับเงิน
+            </Text>
           </View>
           <View style={styles.signatureBlock}>
             <Text style={styles.signatureLine}>ผู้จ่ายเงิน</Text>
