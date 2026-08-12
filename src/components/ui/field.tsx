@@ -12,9 +12,19 @@ const fieldClasses =
 export const Input = forwardRef<
   HTMLInputElement,
   InputHTMLAttributes<HTMLInputElement>
->(function Input({ className, ...props }, ref) {
+>(function Input({ className, type, ...props }, ref) {
+  const dateInputClasses =
+    type === "date"
+      ? "min-w-0 max-w-full pr-2 text-[13px] [field-sizing:fixed] sm:text-sm"
+      : "";
+
   return (
-    <input ref={ref} className={cn(fieldClasses, className)} {...props} />
+    <input
+      ref={ref}
+      type={type}
+      className={cn(fieldClasses, dateInputClasses, className)}
+      {...props}
+    />
   );
 });
 

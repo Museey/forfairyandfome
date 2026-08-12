@@ -523,7 +523,7 @@ export default async function JobDetailPage({
                     name={key}
                     type="date"
                     lang="en-CA"
-                    className="min-w-0 max-w-full"
+                    className="w-full min-w-0"
                     defaultValue={toDateInputValue(job[key])}
                   />
                 </div>
