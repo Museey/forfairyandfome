@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, FileDown, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Pencil, Trash2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DOCUMENT_TYPE_LABEL, computeTotals, formatBaht, parseLineItems } from "@/lib/document";
 import { formatDate } from "@/lib/date";
 import { DocumentStatusSelect } from "@/components/documents/document-status-select";
 import { DuplicateAsButtons } from "@/components/documents/duplicate-as-buttons";
 import { deleteDocument } from "@/app/(app)/jobs/[id]/document-actions";
+import { PdfExportButton } from "@/components/pdf-export-button";
 
 export default async function DocumentDetailPage({
   params,
@@ -36,16 +37,11 @@ export default async function DocumentDetailPage({
       </div>
 
       <div className="flex gap-2">
-        <a
-          href={`/api/documents/${doc.id}/pdf`}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
+        <PdfExportButton
+          url={`/api/documents/${doc.id}/pdf`}
+          filename={`${DOCUMENT_TYPE_LABEL[doc.type]} - ${doc.docNumber}.pdf`}
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"
-        >
-          <FileDown className="h-4 w-4" />
-          ส่งออก PDF
-        </a>
+        />
         <Link
           href={`/jobs/${id}/documents/${doc.id}/edit`}
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-text-muted"

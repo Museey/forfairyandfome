@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, FileDown, MessageSquareText, Plus } from "lucide-react";
+import { ChevronLeft, MessageSquareText, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { TabBar } from "@/components/tab-bar";
 import { StatusSelect } from "@/components/status-select";
@@ -37,6 +37,7 @@ import {
   parseLineItems,
 } from "@/lib/document";
 import { DeleteJobButton } from "@/components/delete-job-button";
+import { PdfExportButton } from "@/components/pdf-export-button";
 
 const TABS = [
   { key: "timeline", label: "ไทม์ไลน์" },
@@ -272,16 +273,11 @@ export default async function JobDetailPage({
 
       {tab === "work" && (
         <div className="flex flex-col gap-6 pb-6">
-          <a
-            href={`/api/details-of-work/${job.id}/pdf`}
-            download
-            target="_blank"
-            rel="noopener noreferrer"
+          <PdfExportButton
+            url={`/api/details-of-work/${job.id}/pdf`}
+            filename={`Details - ${job.brandName}.pdf`}
             className="flex items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"
-          >
-            <FileDown className="h-4 w-4" />
-            ส่งออก PDF
-          </a>
+          />
 
           <form
             action={saveDetailsOfWork}
