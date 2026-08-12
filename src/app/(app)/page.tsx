@@ -7,7 +7,7 @@ import { AttendanceStatus } from "@/components/attendance-status";
 import { Composer } from "@/components/timeline/composer";
 import { PostItem } from "@/components/timeline/post-item";
 import { groupFeedRows } from "@/lib/feed";
-import { addReminder } from "@/app/(app)/reminder-actions";
+import { addReminder, clearReminder } from "@/app/(app)/reminder-actions";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   JOB_STATUS_ORDER,
@@ -220,7 +220,7 @@ export default async function TodayPage() {
           <Composer action={addReminder} placeholder="พิมพ์ข้อความ..." />
           {myReminder && (
             <div className="mt-2 opacity-70">
-              <PostItem item={myReminder} />
+              <PostItem item={myReminder} onDelete={clearReminder} />
             </div>
           )}
         </div>

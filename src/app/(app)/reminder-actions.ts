@@ -37,3 +37,9 @@ export async function addReminder(formData: FormData) {
 
   revalidatePath("/");
 }
+
+export async function clearReminder() {
+  const user = await requireCurrentUser();
+  await prisma.reminder.deleteMany({ where: { authorId: user.id } });
+  revalidatePath("/");
+}
