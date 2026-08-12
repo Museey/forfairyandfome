@@ -6,7 +6,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await requireCurrentUser();
 
   return (
-    <div className="flex min-h-dvh flex-1 flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar name={user.name} colorTag={user.colorTag} />
       <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-8">
         {children}
