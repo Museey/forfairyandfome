@@ -39,7 +39,7 @@ export async function saveDetailsOfWork(formData: FormData) {
   const job = await prisma.job.findUnique({ where: { id: jobId } });
   await notifyOtherUsers(user.id, {
     title: job ? `${job.brandName} · ${job.title}` : "Details of Work",
-    body: `${user.name} บันทึก Details of Work แล้ว`,
+    body: `${user.name} ส่ง Details of Work แล้ว`,
     url: `/jobs/${jobId}?tab=work`,
   });
 
