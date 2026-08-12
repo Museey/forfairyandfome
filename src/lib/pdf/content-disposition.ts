@@ -2,13 +2,13 @@
  * HTTP header values must be Latin-1; Thai filenames need RFC 5987 encoding.
  * Provides both an ASCII fallback and the UTF-8 filename* form.
  *
- * Uses "attachment" rather than "inline": installed PWAs run with no browser
- * chrome (no share/download button), so an inline PDF just renders with no
- * way to save it. "attachment" makes the browser trigger its normal
- * download/save flow instead, which works even with no chrome.
+ * Always "inline": the preview button embeds this URL in an iframe (needs
+ * inline to render instead of trying to download), and the export/share
+ * button fetches the bytes itself and builds a File client-side, so this
+ * header doesn't affect it either way.
  */
 export function pdfContentDisposition(filename: string) {
   const asciiFallback = filename.replace(/[^\x20-\x7E]/g, "_");
   const encoded = encodeURIComponent(filename);
-  return `attachment; filename="${asciiFallback}.pdf"; filename*=UTF-8''${encoded}.pdf`;
+  return `inline; filename="${asciiFallback}.pdf"; filename*=UTF-8''${encoded}.pdf`;
 }

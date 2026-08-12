@@ -8,6 +8,7 @@ import { DocumentStatusSelect } from "@/components/documents/document-status-sel
 import { DuplicateAsButtons } from "@/components/documents/duplicate-as-buttons";
 import { deleteDocument } from "@/app/(app)/jobs/[id]/document-actions";
 import { PdfExportButton } from "@/components/pdf-export-button";
+import { PdfPreviewButton } from "@/components/pdf-preview-button";
 
 export default async function DocumentDetailPage({
   params,
@@ -37,19 +38,25 @@ export default async function DocumentDetailPage({
       </div>
 
       <div className="flex gap-2">
+        <PdfPreviewButton
+          url={`/api/documents/${doc.id}/pdf`}
+          title={`${DOCUMENT_TYPE_LABEL[doc.type]} - ${doc.docNumber}`}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-text-muted"
+        />
         <PdfExportButton
           url={`/api/documents/${doc.id}/pdf`}
           filename={`${DOCUMENT_TYPE_LABEL[doc.type]} - ${doc.docNumber}.pdf`}
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"
         />
-        <Link
-          href={`/jobs/${id}/documents/${doc.id}/edit`}
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-text-muted"
-        >
-          <Pencil className="h-4 w-4" />
-          แก้ไข
-        </Link>
       </div>
+
+      <Link
+        href={`/jobs/${id}/documents/${doc.id}/edit`}
+        className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-text-muted"
+      >
+        <Pencil className="h-4 w-4" />
+        แก้ไข
+      </Link>
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-text-muted">สถานะ</h2>

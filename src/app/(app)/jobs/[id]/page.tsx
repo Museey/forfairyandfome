@@ -38,6 +38,7 @@ import {
 } from "@/lib/document";
 import { DeleteJobButton } from "@/components/delete-job-button";
 import { PdfExportButton } from "@/components/pdf-export-button";
+import { PdfPreviewButton } from "@/components/pdf-preview-button";
 
 const TABS = [
   { key: "timeline", label: "ไทม์ไลน์" },
@@ -228,7 +229,7 @@ export default async function JobDetailPage({
             className="inline-flex items-center gap-1.5 self-start rounded-pill border border-border bg-card px-3 py-1.5 text-xs text-teal"
           >
             <MessageSquareText className="h-3.5 w-3.5" />
-            ไปที่การแก้ไขจากลูกค้า
+            go to Storyline Feedback
           </a>
 
           <StorylineEditor
@@ -244,7 +245,7 @@ export default async function JobDetailPage({
           <section id="storyline-revisions" className="flex flex-col gap-3">
             <div>
               <h2 className="text-sm font-medium text-text-muted">
-                การแก้ไขจากลูกค้า
+                Storyline Feedback
               </h2>
               <p className="text-xs text-text-faint">
                 แปะสิ่งที่ลูกค้าส่งกลับมา (text / รูป / ไฟล์ / ลิงก์) เพื่อคุยกันว่าจะใช้อันไหน
@@ -253,7 +254,7 @@ export default async function JobDetailPage({
             <Composer
               jobId={job.id}
               action={addStorylineRevision}
-              placeholder="แปะการแก้ไขจากลูกค้า (text / รูป / ไฟล์ / ลิงก์)"
+              placeholder="แปะ Storyline Feedback (text / รูป / ไฟล์ / ลิงก์)"
             />
             {storylineRevisionFeed.length > 0 && (
               <div className="flex flex-col gap-2.5">
@@ -273,11 +274,18 @@ export default async function JobDetailPage({
 
       {tab === "work" && (
         <div className="flex flex-col gap-6 pb-6">
-          <PdfExportButton
-            url={`/api/details-of-work/${job.id}/pdf`}
-            filename={`Details - ${job.brandName}.pdf`}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"
-          />
+          <div className="flex gap-2">
+            <PdfPreviewButton
+              url={`/api/details-of-work/${job.id}/pdf`}
+              title={`Details - ${job.brandName}`}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-text-muted"
+            />
+            <PdfExportButton
+              url={`/api/details-of-work/${job.id}/pdf`}
+              filename={`Details - ${job.brandName}.pdf`}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"
+            />
+          </div>
 
           <form
             action={saveDetailsOfWork}
