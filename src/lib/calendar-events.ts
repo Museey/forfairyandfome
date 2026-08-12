@@ -1,5 +1,6 @@
 import { dateKey } from "@/lib/calendar-grid";
-import { JOB_DATE_FIELDS } from "@/lib/job-dates";
+import { JOB_DATE_FIELDS, JOB_DATE_FIELD_DONE_STATUS } from "@/lib/job-dates";
+import { JOB_STATUS_COLOR } from "@/lib/job-status";
 
 export type DayEvent = {
   jobId: string;
@@ -9,12 +10,14 @@ export type DayEvent = {
   icon?: "in" | "out";
 };
 
-const DATE_FIELD_COLOR: Record<string, string> = {
-  storylineSendDate: "#FFB703",
-  shootDate: "#64FFDA",
-  draftSendDate: "#F4A261",
-  postDate: "#A78BFA",
-};
+// Reuse the same colors as the home page's job-status strip, keyed by the
+// status each date field's deadline maps to (e.g. shootDate -> WAITING_DRAFT).
+const DATE_FIELD_COLOR: Record<string, string> = Object.fromEntries(
+  Object.entries(JOB_DATE_FIELD_DONE_STATUS).map(([field, status]) => [
+    field,
+    JOB_STATUS_COLOR[status],
+  ]),
+);
 
 export const CHECK_EVENT_COLOR = "#5EA8FF";
 
