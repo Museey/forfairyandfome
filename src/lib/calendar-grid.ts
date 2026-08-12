@@ -1,8 +1,11 @@
+import { bangkokDateKey } from "@/lib/timezone";
+
+// Bangkok-explicit rather than local accessors: real timestamps (e.g. check-in
+// events) need the Bangkok calendar day regardless of server ambient timezone.
+// Grid cells built from Date.UTC-anchored or local `new Date(y,m,d)` values are
+// unaffected since Bangkok is always ahead of UTC within the same day.
 export function dateKey(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return bangkokDateKey(date);
 }
 
 /** Returns a 42-cell (6 week) grid of dates for the given month, including

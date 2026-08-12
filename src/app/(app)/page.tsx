@@ -16,12 +16,12 @@ import {
 } from "@/lib/job-status";
 import { dateKey } from "@/lib/calendar-grid";
 import { buildEventsByDay } from "@/lib/calendar-events";
+import { bangkokDayRange } from "@/lib/timezone";
 
 export default async function TodayPage() {
   const currentUser = await requireCurrentUser();
   const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+  const { start: todayStart, end: todayEnd } = bangkokDayRange(0, today);
 
   const [jobs, statusCounts, allJobsWithDates, todayJobCheckEvents, users, reminders] =
     await Promise.all([

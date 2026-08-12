@@ -1,5 +1,6 @@
 import { JobStatus } from "@/generated/prisma/enums";
 import { JOB_STATUS_ORDER } from "@/lib/job-status";
+import { bangkokMidnight } from "@/lib/timezone";
 
 export type JobDates = {
   storylineSendDate: Date | null;
@@ -32,8 +33,7 @@ export function isDateFieldDone(field: keyof JobDates, status: JobStatus) {
 }
 
 export function nextMilestone(job: JobDates) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokMidnight(0);
 
   const candidates = JOB_DATE_FIELDS.map(({ key, label }) => {
     const date = job[key];

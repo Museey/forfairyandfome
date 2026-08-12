@@ -2,15 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyAllUsers } from "@/lib/push";
 import { JOB_DATE_FIELDS, isDateFieldDone } from "@/lib/job-dates";
+import { bangkokDayRange } from "@/lib/timezone";
 
 const MAX_LINES_PER_SECTION = 5;
-
-function dayRange(offsetDays: number) {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetDays);
-  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  return { start, end };
-}
 
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
@@ -18,8 +12,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const today = dayRange(0);
-  const tomorrow = dayRange(1);
+  const today = bangkokDayRange(0);
+  const tomorrow = bangkokDayRange(1);
 
   const jobs = await prisma.job.findMany({
     where: {
