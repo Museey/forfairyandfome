@@ -13,8 +13,8 @@ export const JOB_STATUS_ORDER: JobStatus[] = [
 export const JOB_STATUS_LABEL: Record<JobStatus, string> = {
   NEW: "งานใหม่",
   WAITING_STORYLINE_APPROVAL: "รอลูกค้าอนุมัติ Storyline",
-  SHOOTING: "ถ่ายงาน",
-  WAITING_DRAFT: "รอส่ง Draft",
+  SHOOTING: "รอถ่ายงาน",
+  WAITING_DRAFT: "ถ่ายเสร็จแล้ว",
   DRAFTED: "ส่ง Draft แล้ว",
   POSTED: "โพสต์แล้ว",
   PAID: "ได้รับเงินแล้ว",
@@ -23,8 +23,8 @@ export const JOB_STATUS_LABEL: Record<JobStatus, string> = {
 export const JOB_STATUS_SHORT_LABEL: Record<JobStatus, string> = {
   NEW: "ใหม่",
   WAITING_STORYLINE_APPROVAL: "รออนุมัติ",
-  SHOOTING: "ถ่ายงาน",
-  WAITING_DRAFT: "รอ Draft",
+  SHOOTING: "รอถ่ายงาน",
+  WAITING_DRAFT: "ถ่ายเสร็จแล้ว",
   DRAFTED: "ส่ง Draft แล้ว",
   POSTED: "โพสต์แล้ว",
   PAID: "จ่ายแล้ว",
