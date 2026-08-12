@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Pencil, Trash2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { DOCUMENT_TYPE_LABEL, computeTotals, formatBaht, parseLineItems } from "@/lib/document";
+import { DOCUMENT_TYPE_LABEL, VAT_PERCENT, computeTotals, formatBaht, parseLineItems } from "@/lib/document";
 import { formatDate } from "@/lib/date";
 import { DocumentStatusSelect } from "@/components/documents/document-status-select";
 import { DuplicateAsButtons } from "@/components/documents/duplicate-as-buttons";
@@ -92,6 +92,10 @@ export default async function DocumentDetailPage({
           <div className="flex justify-between text-text-muted">
             <span>รวมเป็นเงิน</span>
             <span>{formatBaht(totals.subtotal)}</span>
+          </div>
+          <div className="mt-1.5 flex justify-between text-text-muted">
+            <span>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</span>
+            <span>+{formatBaht(totals.vat)}</span>
           </div>
           <div className="mt-1.5 flex justify-between text-text-muted">
             <span>หัก ณ ที่จ่าย ({doc.withholdingTaxPercent}%)</span>

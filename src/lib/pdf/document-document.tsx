@@ -1,6 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { DocumentType } from "@/generated/prisma/enums";
-import { DOCUMENT_TYPE_LABEL, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
+import { DOCUMENT_TYPE_LABEL, VAT_PERCENT, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
 
 const INK = "#16213E";
 const MUTED = "#6B7280";
@@ -241,6 +241,10 @@ export function DocumentPdf({
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>รวมเป็นเงิน</Text>
             <Text>{formatBaht(totals.subtotal)}</Text>
+          </View>
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsLabel}>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</Text>
+            <Text>+{formatBaht(totals.vat)}</Text>
           </View>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>หัก ณ ที่จ่าย ({withholdingTaxPercent}%)</Text>

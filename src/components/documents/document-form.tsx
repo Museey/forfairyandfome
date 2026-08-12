@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/field";
-import { computeTotals, formatBaht, type LineItem } from "@/lib/document";
+import { VAT_PERCENT, computeTotals, formatBaht, type LineItem } from "@/lib/document";
 import { DOCUMENT_TYPE_LABEL, DOCUMENT_TYPE_ORDER } from "@/lib/document";
 import { createDocument, updateDocument } from "@/app/(app)/jobs/[id]/document-actions";
 import type { DocumentType } from "@/generated/prisma/enums";
@@ -232,6 +232,10 @@ export function DocumentForm({
         <div className="flex justify-between text-text-muted">
           <span>รวมเป็นเงิน</span>
           <span>{formatBaht(totals.subtotal)}</span>
+        </div>
+        <div className="mt-1.5 flex justify-between text-text-muted">
+          <span>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</span>
+          <span>+{formatBaht(totals.vat)}</span>
         </div>
         <div className="mt-1.5 flex justify-between text-text-muted">
           <span>หัก ณ ที่จ่าย ({withholdingTaxPercent}%)</span>

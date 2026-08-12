@@ -40,11 +40,14 @@ export function parseLineItems(value: unknown): LineItem[] {
     }));
 }
 
+export const VAT_PERCENT = 7;
+
 export function computeTotals(lineItems: LineItem[], withholdingTaxPercent: number) {
   const subtotal = lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const vat = Math.round(subtotal * (VAT_PERCENT / 100) * 100) / 100;
   const withholdingTax = Math.round(subtotal * (withholdingTaxPercent / 100) * 100) / 100;
-  const net = subtotal - withholdingTax;
-  return { subtotal, withholdingTax, net };
+  const net = subtotal + vat - withholdingTax;
+  return { subtotal, vat, withholdingTax, net };
 }
 
 const THB_FORMATTER = new Intl.NumberFormat("th-TH", {
