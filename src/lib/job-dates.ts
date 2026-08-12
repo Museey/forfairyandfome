@@ -1,3 +1,6 @@
+import { JobStatus } from "@/generated/prisma/enums";
+import { JOB_STATUS_ORDER } from "@/lib/job-status";
+
 export type JobDates = {
   storylineSendDate: Date | null;
   shootDate: Date | null;
@@ -14,6 +17,19 @@ export const JOB_DATE_FIELDS: {
   { key: "draftSendDate", label: "ส่ง Draft" },
   { key: "postDate", label: "โพสต์งาน" },
 ];
+
+/** The job-status stage that should have been reached once this deadline has passed. */
+export const JOB_DATE_FIELD_DONE_STATUS: Record<keyof JobDates, JobStatus> = {
+  storylineSendDate: JobStatus.WAITING_STORYLINE_APPROVAL,
+  shootDate: JobStatus.WAITING_DRAFT,
+  draftSendDate: JobStatus.DRAFTED,
+  postDate: JobStatus.POSTED,
+};
+
+export function isDateFieldDone(field: keyof JobDates, status: JobStatus) {
+  const doneStatus = JOB_DATE_FIELD_DONE_STATUS[field];
+  return JOB_STATUS_ORDER.indexOf(status) >= JOB_STATUS_ORDER.indexOf(doneStatus);
+}
 
 export function nextMilestone(job: JobDates) {
   const today = new Date();

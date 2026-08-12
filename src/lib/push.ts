@@ -13,11 +13,10 @@ export type PushPayload = {
   url?: string;
 };
 
-export async function notifyOtherUsers(excludeUserId: string, payload: PushPayload) {
-  const subscriptions = await prisma.pushSubscription.findMany({
-    where: { userId: { not: excludeUserId } },
-  });
-
+async function sendToSubscriptions(
+  subscriptions: { id: string; endpoint: string; p256dh: string; auth: string }[],
+  payload: PushPayload,
+) {
   await Promise.all(
     subscriptions.map(async (sub) => {
       try {
@@ -36,4 +35,16 @@ export async function notifyOtherUsers(excludeUserId: string, payload: PushPaylo
       }
     }),
   );
+}
+
+export async function notifyOtherUsers(excludeUserId: string, payload: PushPayload) {
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: { userId: { not: excludeUserId } },
+  });
+  await sendToSubscriptions(subscriptions, payload);
+}
+
+export async function notifyAllUsers(payload: PushPayload) {
+  const subscriptions = await prisma.pushSubscription.findMany();
+  await sendToSubscriptions(subscriptions, payload);
 }
