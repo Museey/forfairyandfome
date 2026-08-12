@@ -83,6 +83,7 @@ model User {
   checkEvents       CheckEvent[]
   calendarTokens    CalendarToken[]
   pushSubscriptions PushSubscription[]
+  reminders         Reminder[]
 }
 
 model Job {
@@ -237,6 +238,20 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model Reminder {
+  id       String        @id @default(cuid())
+  type     BriefItemType
+  content  String?
+  fileUrl  String?
+  groupId  String?
+  authorId String
+  author   User          @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([groupId])
 }
 
 model SellerProfile {

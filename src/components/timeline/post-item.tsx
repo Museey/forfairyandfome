@@ -9,7 +9,7 @@ export function PostItem({
   onDelete,
 }: {
   item: FeedItem;
-  jobId: string;
+  jobId?: string;
   onDelete?: (formData: FormData) => Promise<void>;
 }) {
   if (item.isSystem) {
@@ -36,7 +36,7 @@ export function PostItem({
           {onDelete && (
             <form action={onDelete} className="ml-auto">
               <input type="hidden" name="id" value={item.id} />
-              <input type="hidden" name="jobId" value={jobId} />
+              {jobId && <input type="hidden" name="jobId" value={jobId} />}
               <button
                 type="submit"
                 className="text-text-faint transition active:text-danger"

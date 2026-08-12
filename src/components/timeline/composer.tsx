@@ -10,7 +10,7 @@ export function Composer({
   action,
   placeholder,
 }: {
-  jobId: string;
+  jobId?: string;
   action: (formData: FormData) => Promise<void>;
   placeholder: string;
 }) {
@@ -46,7 +46,7 @@ export function Composer({
   function submit() {
     if (!canSubmit || pending) return;
     const formData = new FormData();
-    formData.set("jobId", jobId);
+    if (jobId) formData.set("jobId", jobId);
     formData.set("body", body.trim());
     for (const file of files) formData.append("files", file);
     if (link.trim()) formData.set("link", link.trim());

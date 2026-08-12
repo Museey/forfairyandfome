@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { JobCard } from "@/components/job-card";
 import { AttendanceStatus } from "@/components/attendance-status";
+import { Composer } from "@/components/timeline/composer";
+import { PostItem } from "@/components/timeline/post-item";
+import { groupFeedRows } from "@/lib/feed";
+import { addReminder, deleteReminder } from "@/app/(app)/reminder-actions";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   JOB_STATUS_ORDER,
@@ -19,7 +23,7 @@ export default async function TodayPage() {
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-  const [jobs, statusCounts, allJobsWithDates, todayJobCheckEvents, manager] =
+  const [jobs, statusCounts, allJobsWithDates, todayJobCheckEvents, manager, reminders] =
     await Promise.all([
       prisma.job.findMany({
         orderBy: { updatedAt: "desc" },
@@ -42,6 +46,10 @@ export default async function TodayPage() {
         include: { user: true, job: true },
       }),
       prisma.user.findFirst({ where: { role: "MANAGER" } }),
+      prisma.reminder.findMany({
+        include: { author: true },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      }),
     ]);
 
   const managerTodayEvents = manager
@@ -68,6 +76,19 @@ export default async function TodayPage() {
   const eventsByDay = buildEventsByDay(allJobsWithDates, jobCheckEvents);
   const todayEvents = eventsByDay.get(dateKey(today)) ?? [];
 
+  const reminderFeed = groupFeedRows(
+    reminders.map((r) => ({
+      id: r.id,
+      groupId: r.groupId,
+      type: r.type,
+      body: r.content,
+      attachmentUrl: r.type === "LINK" ? null : r.fileUrl,
+      linkUrl: r.type === "LINK" ? r.fileUrl : null,
+      createdAt: r.createdAt,
+      author: r.author,
+    })),
+  );
+
   return (
     <div className="flex flex-1 flex-col gap-6 pt-2">
       <div className="flex items-center justify-between">
@@ -91,6 +112,21 @@ export default async function TodayPage() {
           lastEventAt={lastManagerEvent?.occurredAt ?? null}
         />
       )}
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-text-muted">เตือนความจำ</h2>
+        <Composer
+          action={addReminder}
+          placeholder="ฝากเตือนความจำ (text / รูป / ไฟล์ / ลิงก์)"
+        />
+        {reminderFeed.length > 0 && (
+          <div className="flex flex-col gap-2.5">
+            {reminderFeed.map((item) => (
+              <PostItem key={item.id} item={item} onDelete={deleteReminder} />
+            ))}
+          </div>
+        )}
+      </section>
 
       <section>
         <div className="mb-2 flex items-center justify-between">
