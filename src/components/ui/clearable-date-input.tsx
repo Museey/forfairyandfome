@@ -16,14 +16,14 @@ export function ClearableDateInput({
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="relative">
+    <div className="flex items-center gap-2">
       <Input
         ref={inputRef}
         id={id}
         name={name}
         type="date"
         lang="en-CA"
-        className="w-full min-w-0 pr-9"
+        className="min-w-0 flex-1"
         defaultValue={defaultValue}
       />
       <button
@@ -32,7 +32,7 @@ export function ClearableDateInput({
         onClick={() => {
           if (inputRef.current) inputRef.current.value = "";
         }}
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-faint active:bg-border"
+        className="shrink-0 rounded-full p-1.5 text-text-faint active:bg-border"
       >
         <X className="h-4 w-4" />
       </button>
