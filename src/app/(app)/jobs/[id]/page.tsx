@@ -7,6 +7,7 @@ import { StatusSelect } from "@/components/status-select";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
+import { ClearableDateInput } from "@/components/ui/clearable-date-input";
 import { updateJobDates, updateJobInfo } from "@/app/(app)/jobs/actions";
 import {
   addBriefItem,
@@ -518,12 +519,9 @@ export default async function JobDetailPage({
               {JOB_DATE_FIELDS.map(({ key, label }) => (
                 <div key={key}>
                   <Label htmlFor={key}>{label}</Label>
-                  <Input
+                  <ClearableDateInput
                     id={key}
                     name={key}
-                    type="date"
-                    lang="en-CA"
-                    className="w-full min-w-0"
                     defaultValue={toDateInputValue(job[key])}
                   />
                 </div>
