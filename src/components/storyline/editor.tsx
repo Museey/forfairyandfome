@@ -256,7 +256,7 @@ export function StorylineEditor({
           บันทึกแบบร่าง
         </Button>
         <Button className="flex-1" disabled={pending} onClick={handleSend}>
-          บันทึกและส่งให้ลูกค้า
+          ส่ง Storyline ให้ลูกค้า
         </Button>
       </div>
     </div>

@@ -43,17 +43,18 @@ export async function GET(request: Request) {
     }
   }
 
-  if (lines.length > 0) {
-    const shown = lines.slice(0, MAX_LINES);
-    const extra = lines.length - shown.length;
-    const body = [...shown, ...(extra > 0 ? [`+ อีก ${extra} รายการ`] : [])].join("\n");
+  const shown = lines.slice(0, MAX_LINES);
+  const extra = lines.length - shown.length;
+  const body =
+    lines.length > 0
+      ? [...shown, ...(extra > 0 ? [`+ อีก ${extra} รายการ`] : [])].join("\n")
+      : "วันนี้ไม่มีงานที่ต้องทำ";
 
-    await notifyUsersByRole("CREATOR", {
-      title: "งานที่ต้องทำวันนี้",
-      body,
-      url: "/",
-    });
-  }
+  await notifyUsersByRole("CREATOR", {
+    title: "งานที่ต้องทำวันนี้",
+    body,
+    url: "/",
+  });
 
   return NextResponse.json({ ok: true, count: lines.length });
 }

@@ -51,9 +51,10 @@ export async function sendStoryline(jobId: string, scenes: StorylineScene[]) {
     },
   });
 
+  const otherUser = await prisma.user.findFirst({ where: { id: { not: user.id } } });
   await notifyOtherUsers(user.id, {
     title: job ? `${job.brandName} · ${job.title}` : "Storyline",
-    body: `${user.name} ส่ง Storyline ให้ลูกค้าแล้ว`,
+    body: `${user.name} ส่ง Storyline ให้ ${otherUser?.name ?? "อีกฝ่าย"} แล้ว`,
     url: `/jobs/${jobId}?tab=storyline`,
   });
 
