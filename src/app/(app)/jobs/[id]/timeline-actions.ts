@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { resolvePosts } from "@/lib/post-attachments";
+import { notifyOtherUsers } from "@/lib/push";
 import type { BriefItemType, TimelinePostType } from "@/generated/prisma/enums";
 
 export async function addBriefItem(formData: FormData) {
@@ -25,6 +26,13 @@ export async function addBriefItem(formData: FormData) {
       groupId,
       context: "BRIEF",
     })),
+  });
+
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  await notifyOtherUsers(user.id, {
+    title: job ? `${job.brandName} · ${job.title}` : "บรีฟจากลูกค้า",
+    body: `${user.name} แปะบรีฟจากลูกค้า`,
+    url: `/jobs/${jobId}`,
   });
 
   revalidatePath(`/jobs/${jobId}`);
