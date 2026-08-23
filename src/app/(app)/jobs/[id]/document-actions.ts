@@ -13,7 +13,7 @@ function optionalField(formData: FormData, key: string) {
 }
 
 export async function createDocument(formData: FormData) {
-  const user = await requireCurrentUser();
+  await requireCurrentUser();
   const jobId = String(formData.get("jobId") || "");
   const type = String(formData.get("type") || "QUOTATION") as DocumentType;
   const issueDate = String(formData.get("issueDate") || "");
@@ -38,13 +38,6 @@ export async function createDocument(formData: FormData) {
       lineItems,
       withholdingTaxPercent,
     },
-  });
-
-  const job = await prisma.job.findUnique({ where: { id: jobId } });
-  await notifyOtherUsers(user.id, {
-    title: job ? `${job.brandName} · ${job.title}` : DOCUMENT_TYPE_LABEL[type],
-    body: `${user.name} สร้าง${DOCUMENT_TYPE_LABEL[type]}แล้ว`,
-    url: `/jobs/${jobId}/documents/${doc.id}`,
   });
 
   revalidatePath(`/jobs/${jobId}`);
@@ -87,14 +80,23 @@ export async function updateDocumentStatus(
   jobId: string,
   status: DocumentStatus,
 ) {
-  await requireCurrentUser();
-  await prisma.document.update({ where: { id: docId }, data: { status } });
+  const user = await requireCurrentUser();
+  const doc = await prisma.document.update({ where: { id: docId }, data: { status } });
 
   if (status === "PAID") {
     const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (job && job.status !== "PAID") {
       await prisma.job.update({ where: { id: jobId }, data: { status: "PAID" } });
     }
+  }
+
+  if (status === "SENT") {
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    await notifyOtherUsers(user.id, {
+      title: job ? `${job.brandName} · ${job.title}` : DOCUMENT_TYPE_LABEL[doc.type],
+      body: `${user.name} ส่ง${DOCUMENT_TYPE_LABEL[doc.type]}แล้ว`,
+      url: `/jobs/${jobId}/documents/${docId}`,
+    });
   }
 
   revalidatePath(`/jobs/${jobId}/documents/${docId}`);
@@ -106,7 +108,7 @@ export async function duplicateDocumentAs(
   jobId: string,
   newType: DocumentType,
 ) {
-  const user = await requireCurrentUser();
+  await requireCurrentUser();
   const source = await prisma.document.findUnique({ where: { id: docId } });
   if (!source) return;
 
@@ -126,13 +128,6 @@ export async function duplicateDocumentAs(
       lineItems: source.lineItems as never,
       withholdingTaxPercent: source.withholdingTaxPercent,
     },
-  });
-
-  const job = await prisma.job.findUnique({ where: { id: jobId } });
-  await notifyOtherUsers(user.id, {
-    title: job ? `${job.brandName} · ${job.title}` : DOCUMENT_TYPE_LABEL[newType],
-    body: `${user.name} สร้าง${DOCUMENT_TYPE_LABEL[newType]}แล้ว`,
-    url: `/jobs/${jobId}/documents/${doc.id}`,
   });
 
   revalidatePath(`/jobs/${jobId}`);

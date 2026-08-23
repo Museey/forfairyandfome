@@ -13,12 +13,8 @@ function linesToBullets(value: FormDataEntryValue | null): string[] {
     .filter(Boolean);
 }
 
-export async function saveDetailsOfWork(formData: FormData) {
-  const user = await requireCurrentUser();
-  const jobId = String(formData.get("jobId") || "");
-  if (!jobId) return;
-
-  const data = {
+function detailsOfWorkFields(formData: FormData) {
+  return {
     sow: String(formData.get("sow") || "").trim() || null,
     location: String(formData.get("location") || "").trim() || null,
     keyMessage: linesToBullets(formData.get("keyMessage")),
@@ -29,7 +25,29 @@ export async function saveDetailsOfWork(formData: FormData) {
     hashtags: String(formData.get("hashtags") || "").trim() || null,
     otherNotes: String(formData.get("otherNotes") || "").trim() || null,
   };
+}
 
+export async function saveDetailsOfWorkDraft(formData: FormData) {
+  await requireCurrentUser();
+  const jobId = String(formData.get("jobId") || "");
+  if (!jobId) return;
+
+  const data = detailsOfWorkFields(formData);
+  await prisma.detailsOfWork.upsert({
+    where: { jobId },
+    update: data,
+    create: { jobId, ...data },
+  });
+
+  revalidatePath(`/jobs/${jobId}`);
+}
+
+export async function saveDetailsOfWork(formData: FormData) {
+  const user = await requireCurrentUser();
+  const jobId = String(formData.get("jobId") || "");
+  if (!jobId) return;
+
+  const data = detailsOfWorkFields(formData);
   await prisma.detailsOfWork.upsert({
     where: { jobId },
     update: data,

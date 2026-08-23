@@ -26,7 +26,7 @@ import {
   deleteStorylineRevision,
 } from "@/app/(app)/jobs/[id]/storyline-actions";
 import { parseScenes } from "@/lib/storyline";
-import { saveDetailsOfWork } from "@/app/(app)/jobs/[id]/details-of-work-actions";
+import { saveDetailsOfWork, saveDetailsOfWorkDraft } from "@/app/(app)/jobs/[id]/details-of-work-actions";
 import { ProductImageGallery } from "@/components/details-of-work/product-image-gallery";
 import { Textarea } from "@/components/ui/field";
 import {
@@ -413,9 +413,19 @@ export default async function JobDetailPage({
               />
             </div>
 
-            <Button type="submit" variant="secondary">
-              บันทึก Details of Work
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                formAction={saveDetailsOfWorkDraft}
+                variant="secondary"
+                className="flex-1"
+              >
+                บันทึกแบบร่าง
+              </Button>
+              <Button type="submit" formAction={saveDetailsOfWork} className="flex-1">
+                บันทึกและแจ้งเตือน
+              </Button>
+            </div>
           </form>
 
           <section>
