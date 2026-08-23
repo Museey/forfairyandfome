@@ -112,7 +112,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <View style={styles.section} wrap={false}>
+    <View style={styles.section}>
       <Text style={styles.sectionLabel}>{label}</Text>
       {children}
     </View>
@@ -124,7 +124,7 @@ function Bullets({ items }: { items: string[] }) {
   return (
     <>
       {items.map((item, i) => (
-        <View key={i} style={styles.bulletRow}>
+        <View key={i} style={styles.bulletRow} wrap={false}>
           <Text style={styles.bulletDot}>•</Text>
           <Text style={styles.bulletText}>{item}</Text>
         </View>
