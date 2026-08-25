@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { resolvePosts } from "@/lib/post-attachments";
 import { notifyOtherUsers } from "@/lib/push";
+import { deleteFile } from "@/lib/storage";
 import type { BriefItemType, TimelinePostType } from "@/generated/prisma/enums";
 
 export async function addBriefItem(formData: FormData) {
@@ -43,12 +44,17 @@ export async function deleteBriefItem(formData: FormData) {
   const id = String(formData.get("id") || "");
   const jobId = String(formData.get("jobId") || "");
   if (!id || !jobId) return;
-  const { count } = await prisma.briefItem.deleteMany({
+
+  let items = await prisma.briefItem.findMany({
     where: { jobId, groupId: id, context: "BRIEF" },
   });
-  if (count === 0) {
-    await prisma.briefItem.deleteMany({ where: { jobId, id, context: "BRIEF" } });
+  if (items.length === 0) {
+    items = await prisma.briefItem.findMany({ where: { jobId, id, context: "BRIEF" } });
   }
+
+  await prisma.briefItem.deleteMany({ where: { id: { in: items.map((i) => i.id) } } });
+  await Promise.all(items.filter((i) => i.fileUrl).map((i) => deleteFile(i.fileUrl!)));
+
   revalidatePath(`/jobs/${jobId}`);
 }
 
@@ -81,11 +87,16 @@ export async function deleteTimelinePost(formData: FormData) {
   const id = String(formData.get("id") || "");
   const jobId = String(formData.get("jobId") || "");
   if (!id || !jobId) return;
-  const { count } = await prisma.timelinePost.deleteMany({
-    where: { jobId, groupId: id },
-  });
-  if (count === 0) {
-    await prisma.timelinePost.deleteMany({ where: { jobId, id } });
+
+  let items = await prisma.timelinePost.findMany({ where: { jobId, groupId: id } });
+  if (items.length === 0) {
+    items = await prisma.timelinePost.findMany({ where: { jobId, id } });
   }
+
+  await prisma.timelinePost.deleteMany({ where: { id: { in: items.map((i) => i.id) } } });
+  await Promise.all(
+    items.filter((i) => i.attachmentUrl).map((i) => deleteFile(i.attachmentUrl!)),
+  );
+
   revalidatePath(`/jobs/${jobId}`);
 }

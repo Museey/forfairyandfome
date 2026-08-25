@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { resolvePosts } from "@/lib/post-attachments";
 import { notifyOtherUsers } from "@/lib/push";
+import { deleteFile } from "@/lib/storage";
 import type { BriefItemType } from "@/generated/prisma/enums";
 
 // Each user has at most one active reminder — posting a new one replaces
@@ -14,6 +15,8 @@ export async function addReminder(formData: FormData) {
 
   const resolved = await resolvePosts(formData, "reminders");
   if (resolved.length === 0) return;
+
+  const previous = await prisma.reminder.findMany({ where: { authorId: user.id } });
 
   const groupId = crypto.randomUUID();
   await prisma.$transaction([
@@ -28,6 +31,7 @@ export async function addReminder(formData: FormData) {
       })),
     }),
   ]);
+  await Promise.all(previous.filter((r) => r.fileUrl).map((r) => deleteFile(r.fileUrl!)));
 
   await notifyOtherUsers(user.id, {
     title: "เตือนความจำ",
@@ -40,6 +44,8 @@ export async function addReminder(formData: FormData) {
 
 export async function clearReminder() {
   const user = await requireCurrentUser();
+  const previous = await prisma.reminder.findMany({ where: { authorId: user.id } });
   await prisma.reminder.deleteMany({ where: { authorId: user.id } });
+  await Promise.all(previous.filter((r) => r.fileUrl).map((r) => deleteFile(r.fileUrl!)));
   revalidatePath("/");
 }

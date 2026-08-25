@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { JOB_STATUS_LABEL } from "@/lib/job-status";
 import { notifyOtherUsers, notifyUsersByRole } from "@/lib/push";
+import { deleteFile } from "@/lib/storage";
 import type { JobStatus } from "@/generated/prisma/enums";
 
 export async function createJob(formData: FormData) {
@@ -110,6 +111,23 @@ export async function updateJobInfo(formData: FormData) {
 
 export async function deleteJob(jobId: string) {
   await requireCurrentUser();
+
+  const [briefItems, timelinePosts, detailsOfWork] = await Promise.all([
+    prisma.briefItem.findMany({ where: { jobId } }),
+    prisma.timelinePost.findMany({ where: { jobId } }),
+    prisma.detailsOfWork.findUnique({ where: { jobId } }),
+  ]);
+  const productImages = Array.isArray(detailsOfWork?.productImages)
+    ? (detailsOfWork.productImages as string[])
+    : [];
+  const fileUrls = [
+    ...briefItems.map((i) => i.fileUrl),
+    ...timelinePosts.map((i) => i.attachmentUrl),
+    ...productImages,
+  ].filter((url): url is string => !!url);
+
   await prisma.job.delete({ where: { id: jobId } });
+  await Promise.all(fileUrls.map((url) => deleteFile(url)));
+
   revalidatePath("/jobs");
 }

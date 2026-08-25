@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { resolvePosts } from "@/lib/post-attachments";
 import { notifyOtherUsers } from "@/lib/push";
+import { deleteFile } from "@/lib/storage";
 import type { StorylineScene } from "@/lib/storyline";
 import type { BriefItemType } from "@/generated/prisma/enums";
 
@@ -125,13 +126,15 @@ export async function deleteStorylineRevision(formData: FormData) {
   const id = String(formData.get("id") || "");
   const jobId = String(formData.get("jobId") || "");
   if (!id || !jobId) return;
-  const { count } = await prisma.briefItem.deleteMany({
+
+  let items = await prisma.briefItem.findMany({
     where: { jobId, groupId: id, context: "STORYLINE" },
   });
-  if (count === 0) {
-    await prisma.briefItem.deleteMany({
-      where: { jobId, id, context: "STORYLINE" },
-    });
+  if (items.length === 0) {
+    items = await prisma.briefItem.findMany({ where: { jobId, id, context: "STORYLINE" } });
   }
+
+  await prisma.briefItem.deleteMany({ where: { id: { in: items.map((i) => i.id) } } });
+  await Promise.all(items.filter((i) => i.fileUrl).map((i) => deleteFile(i.fileUrl!)));
   revalidatePath(`/jobs/${jobId}`);
 }

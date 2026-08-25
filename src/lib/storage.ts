@@ -47,5 +47,31 @@ export async function uploadFile(
   return `/api/uploads/${key}`;
 }
 
+const SUPABASE_PUBLIC_PREFIX = SUPABASE_URL
+  ? `${SUPABASE_URL}/storage/v1/object/public/attachments/`
+  : null;
+
+/**
+ * Deletes a previously-uploaded file given the URL uploadFile() returned.
+ * Silently no-ops for URLs it doesn't recognize (e.g. LINK attachments,
+ * which aren't files we own) so callers can pass any attachment URL
+ * unconditionally.
+ */
+export async function deleteFile(url: string): Promise<void> {
+  if (USE_SUPABASE && SUPABASE_PUBLIC_PREFIX && url.startsWith(SUPABASE_PUBLIC_PREFIX)) {
+    const key = url.slice(SUPABASE_PUBLIC_PREFIX.length);
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    await supabase.storage.from("attachments").remove([key]);
+    return;
+  }
+
+  if (!USE_SUPABASE && url.startsWith("/api/uploads/")) {
+    const { unlink } = await import("fs/promises");
+    const destination = path.join(LOCAL_UPLOAD_ROOT, url.replace("/api/uploads/", ""));
+    await unlink(destination).catch(() => {});
+  }
+}
+
 export const UPLOAD_LOCAL_ROOT = LOCAL_UPLOAD_ROOT;
 export const UPLOAD_USES_SUPABASE = USE_SUPABASE;

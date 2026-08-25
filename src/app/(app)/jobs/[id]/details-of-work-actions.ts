@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
-import { uploadFile } from "@/lib/storage";
+import { uploadFile, deleteFile } from "@/lib/storage";
 import { notifyOtherUsers } from "@/lib/push";
 
 function linesToBullets(value: FormDataEntryValue | null): string[] {
@@ -101,6 +101,7 @@ export async function removeProductImage(formData: FormData) {
     where: { jobId },
     data: { productImages: images.filter((i) => i !== url) },
   });
+  await deleteFile(url);
 
   revalidatePath(`/jobs/${jobId}`);
 }
