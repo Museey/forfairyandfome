@@ -2,18 +2,32 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { cn } from "@/lib/cn";
 
-export function PhotoAttachment({ url }: { url: string }) {
+export function PhotoAttachment({
+  url,
+  variant = "single",
+}: {
+  url: string;
+  variant?: "single" | "grid";
+}) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="mt-2 block w-full">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cn("block", variant === "single" ? "mt-2 w-full" : "aspect-square w-full")}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={url}
           alt=""
-          className="max-h-72 w-full rounded-xl object-cover"
+          className={cn(
+            "w-full object-cover",
+            variant === "single" ? "max-h-72 rounded-xl" : "h-full rounded-md",
+          )}
         />
       </button>
 

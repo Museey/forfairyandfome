@@ -25,6 +25,9 @@ export function PostItem({
     );
   }
 
+  const photos = item.attachments.filter((a) => a.type === "PHOTO");
+  const otherAttachments = item.attachments.filter((a) => a.type !== "PHOTO");
+
   return (
     <div className="flex gap-3 rounded-card border border-border bg-card p-3">
       <UserAvatar name={item.author.name} colorTag={item.author.colorTag} size={32} />
@@ -55,10 +58,16 @@ export function PostItem({
           </p>
         )}
 
-        {item.attachments.map((attachment) => {
-          if (attachment.type === "PHOTO") {
-            return <PhotoAttachment key={attachment.id} url={attachment.url} />;
-          }
+        {photos.length === 1 && <PhotoAttachment url={photos[0].url} />}
+        {photos.length > 1 && (
+          <div className="mt-2 grid grid-cols-3 gap-1">
+            {photos.map((photo) => (
+              <PhotoAttachment key={photo.id} url={photo.url} variant="grid" />
+            ))}
+          </div>
+        )}
+
+        {otherAttachments.map((attachment) => {
           if (attachment.type === "FILE") {
             return (
               <a
