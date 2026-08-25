@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { Image as ImageIcon, Link as LinkIcon, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { compressImage } from "@/lib/image-compress";
 
 export function Composer({
   jobId,
@@ -33,10 +34,12 @@ export function Composer({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function addFiles(e: React.ChangeEvent<HTMLInputElement>) {
+  async function addFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files ?? []);
-    if (selected.length > 0) setFiles((prev) => [...prev, ...selected]);
     e.target.value = "";
+    if (selected.length === 0) return;
+    const compressed = await Promise.all(selected.map(compressImage));
+    setFiles((prev) => [...prev, ...compressed]);
   }
 
   function removeFile(index: number) {

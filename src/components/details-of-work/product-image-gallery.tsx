@@ -3,6 +3,7 @@
 import { useRef, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { addProductImage, removeProductImage } from "@/app/(app)/jobs/[id]/details-of-work-actions";
+import { compressImage } from "@/lib/image-compress";
 
 export function ProductImageGallery({
   jobId,
@@ -14,12 +15,13 @@ export function ProductImageGallery({
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const compressed = await compressImage(file);
     const formData = new FormData();
     formData.set("jobId", jobId);
-    formData.set("file", file);
+    formData.set("file", compressed);
     startTransition(async () => {
       await addProductImage(formData);
       if (inputRef.current) inputRef.current.value = "";
