@@ -1,6 +1,7 @@
 import { FileText, Link as LinkIcon, Settings2, Trash2 } from "lucide-react";
 import { formatDateTime } from "@/lib/date";
 import { UserAvatar } from "@/components/user-avatar";
+import { PhotoAttachment } from "@/components/timeline/photo-attachment";
 import type { FeedItem } from "@/lib/feed";
 
 export function PostItem({
@@ -56,15 +57,7 @@ export function PostItem({
 
         {item.attachments.map((attachment) => {
           if (attachment.type === "PHOTO") {
-            return (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={attachment.id}
-                src={attachment.url}
-                alt=""
-                className="mt-2 max-h-72 w-full rounded-xl object-cover"
-              />
-            );
+            return <PhotoAttachment key={attachment.id} url={attachment.url} />;
           }
           if (attachment.type === "FILE") {
             return (
