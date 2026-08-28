@@ -2,6 +2,7 @@ import path from "path";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { DocumentType } from "@/generated/prisma/enums";
 import { DOCUMENT_TYPE_LABEL, VAT_PERCENT, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
+import { pdfSafeText } from "@/lib/pdf/text-safe";
 
 // Fome signs every outgoing document by default — a real signature can
 // still be added later if the client needs one from someone else.
@@ -211,27 +212,27 @@ export function DocumentPdf({
         <View style={styles.partiesRow}>
           <View style={styles.partyBlock}>
             <Text style={styles.partyLabel}>ผู้ขาย</Text>
-            <Text style={styles.partyName}>{seller?.name ?? "-"}</Text>
-            {seller?.address && <Text style={styles.partyLine}>{seller.address}</Text>}
+            <Text style={styles.partyName}>{pdfSafeText(seller?.name) ?? "-"}</Text>
+            {seller?.address && <Text style={styles.partyLine}>{pdfSafeText(seller.address)}</Text>}
             {seller?.taxId && (
-              <Text style={styles.partyLine}>เลขประจำตัวผู้เสียภาษี {seller.taxId}</Text>
+              <Text style={styles.partyLine}>เลขประจำตัวผู้เสียภาษี {pdfSafeText(seller.taxId)}</Text>
             )}
-            {seller?.phone && <Text style={styles.partyLine}>โทร {seller.phone}</Text>}
-            {seller?.email && <Text style={styles.partyLine}>{seller.email}</Text>}
+            {seller?.phone && <Text style={styles.partyLine}>โทร {pdfSafeText(seller.phone)}</Text>}
+            {seller?.email && <Text style={styles.partyLine}>{pdfSafeText(seller.email)}</Text>}
           </View>
 
           <View style={styles.partyBlockSpacer} />
 
           <View style={styles.partyBlock}>
             <Text style={styles.partyLabel}>ผู้ซื้อ</Text>
-            <Text style={styles.partyName}>{buyer.name}</Text>
-            {buyer.address && <Text style={styles.partyLine}>{buyer.address}</Text>}
-            {buyer.taxId && <Text style={styles.partyLine}>Tax ID {buyer.taxId}</Text>}
+            <Text style={styles.partyName}>{pdfSafeText(buyer.name)}</Text>
+            {buyer.address && <Text style={styles.partyLine}>{pdfSafeText(buyer.address)}</Text>}
+            {buyer.taxId && <Text style={styles.partyLine}>Tax ID {pdfSafeText(buyer.taxId)}</Text>}
             {buyer.contactName && (
-              <Text style={styles.partyLine}>ผู้ติดต่อ {buyer.contactName}</Text>
+              <Text style={styles.partyLine}>ผู้ติดต่อ {pdfSafeText(buyer.contactName)}</Text>
             )}
-            {buyer.phone && <Text style={styles.partyLine}>โทร {buyer.phone}</Text>}
-            {buyer.email && <Text style={styles.partyLine}>{buyer.email}</Text>}
+            {buyer.phone && <Text style={styles.partyLine}>โทร {pdfSafeText(buyer.phone)}</Text>}
+            {buyer.email && <Text style={styles.partyLine}>{pdfSafeText(buyer.email)}</Text>}
           </View>
         </View>
 
@@ -242,8 +243,8 @@ export function DocumentPdf({
           </View>
           {lineItems.map((item, i) => (
             <View key={i} style={styles.tableRow} wrap={false}>
-              <Text style={styles.colDesc}>{item.description}</Text>
-              <Text style={styles.colAmount}>{formatBaht(item.amount)}</Text>
+              <Text style={styles.colDesc}>{pdfSafeText(item.description)}</Text>
+              <Text style={styles.colAmount}>{pdfSafeText(formatBaht(item.amount))}</Text>
             </View>
           ))}
         </View>
@@ -251,19 +252,19 @@ export function DocumentPdf({
         <View style={styles.totalsBlock}>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>รวมเป็นเงิน</Text>
-            <Text>{formatBaht(totals.subtotal)}</Text>
+            <Text>{pdfSafeText(formatBaht(totals.subtotal))}</Text>
           </View>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</Text>
-            <Text>+{formatBaht(totals.vat)}</Text>
+            <Text>+{pdfSafeText(formatBaht(totals.vat))}</Text>
           </View>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>หัก ณ ที่จ่าย ({withholdingTaxPercent}%)</Text>
-            <Text>-{formatBaht(totals.withholdingTax)}</Text>
+            <Text>-{pdfSafeText(formatBaht(totals.withholdingTax))}</Text>
           </View>
           <View style={styles.netRow}>
             <Text style={styles.netLabel}>ยอดรวม</Text>
-            <Text style={styles.netValue}>{formatBaht(totals.net)}</Text>
+            <Text style={styles.netValue}>{pdfSafeText(formatBaht(totals.net))}</Text>
           </View>
         </View>
 
@@ -271,10 +272,10 @@ export function DocumentPdf({
           <View style={styles.bottomRow}>
             <View style={styles.paymentBlock}>
               <Text style={styles.paymentTitle}>ข้อมูลการชำระเงิน</Text>
-              <Text style={styles.partyLine}>ธนาคาร{seller.bankName}</Text>
-              <Text style={styles.partyLine}>เลขบัญชี {seller.bankAccountNo}</Text>
-              <Text style={styles.partyLine}>ชื่อบัญชี {seller.bankAccountName}</Text>
-              {seller.branch && <Text style={styles.partyLine}>สาขา{seller.branch}</Text>}
+              <Text style={styles.partyLine}>ธนาคาร{pdfSafeText(seller.bankName)}</Text>
+              <Text style={styles.partyLine}>เลขบัญชี {pdfSafeText(seller.bankAccountNo)}</Text>
+              <Text style={styles.partyLine}>ชื่อบัญชี {pdfSafeText(seller.bankAccountName)}</Text>
+              {seller.branch && <Text style={styles.partyLine}>สาขา{pdfSafeText(seller.branch)}</Text>}
             </View>
           </View>
         )}

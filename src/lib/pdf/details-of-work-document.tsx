@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { StorylineScene } from "@/lib/storyline";
 import { resolveImageSource } from "@/lib/pdf/image-source";
+import { pdfSafeText } from "@/lib/pdf/text-safe";
 
 const INK = "#16213E";
 const MUTED = "#6B7280";
@@ -126,7 +127,7 @@ function Bullets({ items }: { items: string[] }) {
       {items.map((item, i) => (
         <View key={i} style={styles.bulletRow} wrap={false}>
           <Text style={styles.bulletDot}>•</Text>
-          <Text style={styles.bulletText}>{item}</Text>
+          <Text style={styles.bulletText}>{pdfSafeText(item)}</Text>
         </View>
       ))}
     </>
@@ -167,18 +168,18 @@ export function DetailsOfWorkDocument({ job, details, approvedScenes }: DetailsO
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
-            Details – {job.brandName} [ {MONTH_YEAR.format(job.createdAt)} ]
+            Details – {pdfSafeText(job.brandName)} [ {MONTH_YEAR.format(job.createdAt)} ]
           </Text>
         </View>
 
-        <Text style={styles.meta}>{job.title}</Text>
+        <Text style={styles.meta}>{pdfSafeText(job.title)}</Text>
 
         <Section label="Work Details (SOW)">
-          <Text style={styles.plainText}>{details.sow || "-"}</Text>
+          <Text style={styles.plainText}>{pdfSafeText(details.sow) || "-"}</Text>
         </Section>
 
         <Section label="Location">
-          <Text style={styles.plainText}>{details.location || "-"}</Text>
+          <Text style={styles.plainText}>{pdfSafeText(details.location) || "-"}</Text>
         </Section>
 
         <Section label="Customer Details">
@@ -203,15 +204,15 @@ export function DetailsOfWorkDocument({ job, details, approvedScenes }: DetailsO
         </Section>
 
         <Section label="Mood & Tone">
-          <Text style={styles.plainText}>{details.moodTone || "-"}</Text>
+          <Text style={styles.plainText}>{pdfSafeText(details.moodTone) || "-"}</Text>
         </Section>
 
         <Section label="Dress Code">
-          <Text style={styles.plainText}>{details.dressCode || "-"}</Text>
+          <Text style={styles.plainText}>{pdfSafeText(details.dressCode) || "-"}</Text>
         </Section>
 
         <Section label="Captions / Hashtags">
-          <Text style={styles.plainText}>{details.hashtags || "-"}</Text>
+          <Text style={styles.plainText}>{pdfSafeText(details.hashtags) || "-"}</Text>
         </Section>
 
         {details.productImages.length > 0 && (
@@ -226,7 +227,7 @@ export function DetailsOfWorkDocument({ job, details, approvedScenes }: DetailsO
         )}
 
         <Section label="Other">
-          <Text style={styles.plainText}>{details.otherNotes || "-"}</Text>
+          <Text style={styles.plainText}>{pdfSafeText(details.otherNotes) || "-"}</Text>
         </Section>
 
         {approvedScenes && approvedScenes.length > 0 && (
@@ -236,15 +237,15 @@ export function DetailsOfWorkDocument({ job, details, approvedScenes }: DetailsO
                 <Text style={styles.sceneTitle}>Sc{i + 1}</Text>
                 <View style={styles.sceneRow}>
                   <Text style={styles.sceneLabel}>Scene</Text>
-                  <Text style={styles.sceneValue}>{scene.scene || "-"}</Text>
+                  <Text style={styles.sceneValue}>{pdfSafeText(scene.scene) || "-"}</Text>
                 </View>
                 <View style={styles.sceneRow}>
                   <Text style={styles.sceneLabel}>Voice</Text>
-                  <Text style={styles.sceneValue}>{scene.voice || "-"}</Text>
+                  <Text style={styles.sceneValue}>{pdfSafeText(scene.voice) || "-"}</Text>
                 </View>
                 <View style={styles.sceneRow}>
                   <Text style={styles.sceneLabel}>Text</Text>
-                  <Text style={styles.sceneValue}>{scene.text || "-"}</Text>
+                  <Text style={styles.sceneValue}>{pdfSafeText(scene.text) || "-"}</Text>
                 </View>
               </View>
             ))}
