@@ -83,7 +83,7 @@ model User {
   checkEvents       CheckEvent[]
   calendarTokens    CalendarToken[]
   pushSubscriptions PushSubscription[]
-  reminders         Reminder[]
+  boardPosts        BoardPost[]
 }
 
 model Job {
@@ -240,8 +240,20 @@ model PushSubscription {
   @@index([userId])
 }
 
-model Reminder {
+// The home page's three posting boards. REMINDER keeps one active post per
+// author (posting replaces the previous); CONTENT and SLIP keep a history.
+enum BoardTopic {
+  REMINDER
+  CONTENT
+  SLIP
+}
+
+// Still mapped to the original "Reminder" table: this started as the reminder
+// board and grew the `topic` column when Content/Slip were added, so keeping
+// the table name makes the migration purely additive.
+model BoardPost {
   id       String        @id @default(cuid())
+  topic    BoardTopic    @default(REMINDER)
   type     BriefItemType
   content  String?
   fileUrl  String?
@@ -252,6 +264,8 @@ model Reminder {
   createdAt DateTime @default(now())
 
   @@index([groupId])
+  @@index([topic, createdAt])
+  @@map("Reminder")
 }
 
 model SellerProfile {

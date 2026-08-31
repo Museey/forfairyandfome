@@ -13,7 +13,10 @@ export async function resolvePosts(
   const files = formData
     .getAll("files")
     .filter((f): f is File => f instanceof File && f.size > 0);
-  const link = String(formData.get("link") || "").trim();
+  // "link" (singular) is still accepted so older clients keep working.
+  const links = [...formData.getAll("links"), ...formData.getAll("link")]
+    .map((l) => String(l).trim())
+    .filter(Boolean);
   const body = String(formData.get("body") || "").trim();
 
   const resolved: ResolvedPost[] = [];
@@ -23,7 +26,7 @@ export async function resolvePosts(
     const isImage = file.type.startsWith("image/");
     resolved.push({ kind: isImage ? "PHOTO" : "FILE", url, body: null });
   }
-  if (link) {
+  for (const link of links) {
     resolved.push({ kind: "LINK", url: link, body: null });
   }
   if (body) {

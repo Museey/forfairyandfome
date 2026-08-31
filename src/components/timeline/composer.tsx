@@ -17,19 +17,18 @@ export function Composer({
 }) {
   const [body, setBody] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const [link, setLink] = useState("");
-  const [showLink, setShowLink] = useState(false);
+  const [links, setLinks] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const canSubmit = body.trim() || files.length > 0 || link.trim();
+  const canSubmit =
+    body.trim() || files.length > 0 || links.some((l) => l.trim());
 
   function reset() {
     setBody("");
     setFiles([]);
-    setLink("");
-    setShowLink(false);
+    setLinks([]);
     if (photoInputRef.current) photoInputRef.current.value = "";
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -46,13 +45,23 @@ export function Composer({
     setFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function updateLink(index: number, value: string) {
+    setLinks((prev) => prev.map((l, i) => (i === index ? value : l)));
+  }
+
+  function removeLink(index: number) {
+    setLinks((prev) => prev.filter((_, i) => i !== index));
+  }
+
   function submit() {
     if (!canSubmit || pending) return;
     const formData = new FormData();
     if (jobId) formData.set("jobId", jobId);
     formData.set("body", body.trim());
     for (const file of files) formData.append("files", file);
-    if (link.trim()) formData.set("link", link.trim());
+    for (const l of links) {
+      if (l.trim()) formData.append("links", l.trim());
+    }
 
     startTransition(async () => {
       await action(formData);
@@ -70,26 +79,27 @@ export function Composer({
         className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-text-faint"
       />
 
-      {showLink && (
-        <div className="mt-2 flex items-center gap-2">
-          <input
-            type="url"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm outline-none placeholder:text-text-faint focus:border-teal/60"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setShowLink(false);
-              setLink("");
-            }}
-            className="shrink-0 text-text-faint"
-            aria-label="ลบลิงก์"
-          >
-            <X className="h-4 w-4" />
-          </button>
+      {links.length > 0 && (
+        <div className="mt-2 flex flex-col gap-2">
+          {links.map((l, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <input
+                type="url"
+                value={l}
+                onChange={(e) => updateLink(index, e.target.value)}
+                placeholder="https://..."
+                className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm outline-none placeholder:text-text-faint focus:border-teal/60"
+              />
+              <button
+                type="button"
+                onClick={() => removeLink(index)}
+                className="shrink-0 text-text-faint"
+                aria-label="ลบลิงก์"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -175,10 +185,10 @@ export function Composer({
           </button>
           <button
             type="button"
-            onClick={() => setShowLink((prev) => !prev)}
+            onClick={() => setLinks((prev) => [...prev, ""])}
             className={cn(
               "rounded-full p-2 transition",
-              showLink ? "text-teal" : "text-text-faint",
+              links.length > 0 ? "text-teal" : "text-text-faint",
             )}
             aria-label="แนบลิงก์"
           >
