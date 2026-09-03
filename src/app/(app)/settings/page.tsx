@@ -8,6 +8,7 @@ import { saveSellerProfile } from "@/app/(app)/settings/actions";
 import { requireCurrentUser } from "@/lib/auth";
 import { getOrCreateCalendarToken } from "@/lib/calendar-token";
 import { CalendarSubscribeLink } from "@/components/calendar-subscribe-link";
+import { WidgetSetupLink } from "@/components/widget-setup-link";
 import { NotificationSettings } from "@/components/notification-settings";
 
 export default async function SettingsPage() {
@@ -21,6 +22,7 @@ export default async function SettingsPage() {
   const host = headerList.get("host") ?? "localhost:3000";
   const protocol = host.startsWith("localhost") ? "http" : "https";
   const calendarUrl = `${protocol}://${host}/api/calendar/${calendarToken}/feed.ics`;
+  const widgetUrl = `${protocol}://${host}/api/widget/${calendarToken}`;
 
   return (
     <div className="flex flex-1 flex-col gap-6 pt-2 pb-6">
@@ -49,6 +51,15 @@ export default async function SettingsPage() {
           Sync ปฏิทินกับ iPhone
         </h2>
         <CalendarSubscribeLink url={calendarUrl} />
+      </section>
+
+      <div className="border-t border-border" />
+
+      <section>
+        <h2 className="mb-2 text-sm font-medium text-text-muted">
+          Widget บน iPhone
+        </h2>
+        <WidgetSetupLink url={widgetUrl} />
       </section>
 
       <div className="border-t border-border" />

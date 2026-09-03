@@ -1,0 +1,165 @@
+// Fairy & Fome — iOS home screen widget for the Scriptable app.
+//
+// Setup (per phone):
+//   1. Install "Scriptable" from the App Store.
+//   2. Open the app → + → paste this whole file → name it "Fairy & Fome".
+//   3. Replace WIDGET_URL below with the link from ตั้งค่า → Widget บน iPhone.
+//   4. On the home screen: long-press → + → Scriptable → pick a size →
+//      add it, then long-press the widget → Edit Widget → Script = this one.
+//
+// Supports small and medium widgets. iOS decides when to refresh (usually
+// every 15-30 min), so this is a glance, not a live feed — push notifications
+// are still what tell you about something the moment it happens.
+
+const WIDGET_URL = "PASTE_YOUR_WIDGET_URL_HERE";
+const APP_URL = "https://forfairyandfome.vercel.app/";
+
+const CREAM = new Color("#FAF7EA");
+const WINE = new Color("#852936");
+const INK = new Color("#3D2B2E");
+const MUTED = new Color("#8A7679");
+const TEAL = new Color("#0E7C6B");
+
+async function loadData() {
+  const req = new Request(WIDGET_URL);
+  req.timeoutInterval = 15;
+  return req.loadJSON();
+}
+
+function header(widget, data) {
+  const row = widget.addStack();
+  row.centerAlignContent();
+
+  const title = row.addText("Fairy & Fome");
+  title.font = Font.mediumSystemFont(11);
+  title.textColor = MUTED;
+
+  row.addSpacer();
+
+  const count = row.addText(String(data.activeCount));
+  count.font = Font.boldSystemFont(15);
+  count.textColor = WINE;
+
+  const unit = row.addText(" งานค้าง");
+  unit.font = Font.systemFont(10);
+  unit.textColor = MUTED;
+}
+
+function todaySection(widget, data, maxRows) {
+  const heading = widget.addText("วันนี้");
+  heading.font = Font.semiboldSystemFont(12);
+  heading.textColor = INK;
+  widget.addSpacer(4);
+
+  if (!data.today || data.today.length === 0) {
+    const empty = widget.addText("ไม่มีนัดหมาย");
+    empty.font = Font.systemFont(11);
+    empty.textColor = MUTED;
+    return;
+  }
+
+  for (const event of data.today.slice(0, maxRows)) {
+    const row = widget.addStack();
+    row.centerAlignContent();
+    row.spacing = 5;
+
+    const dot = row.addText("●");
+    dot.font = Font.systemFont(7);
+    dot.textColor = new Color(event.color ?? "#8E8E93");
+
+    const text = row.addText(`${event.title} · ${event.label}`);
+    text.font = Font.systemFont(11);
+    text.textColor = INK;
+    text.lineLimit = 1;
+
+    widget.addSpacer(3);
+  }
+
+  const extra = data.today.length - maxRows;
+  if (extra > 0) {
+    const more = widget.addText(`+ อีก ${extra} รายการ`);
+    more.font = Font.systemFont(10);
+    more.textColor = MUTED;
+  }
+}
+
+function reminderSection(widget, data, lineLimit) {
+  if (!data.reminder || !data.reminder.text) return;
+
+  widget.addSpacer(6);
+  const line = widget.addStack();
+  line.layoutHorizontally();
+
+  const bar = line.addText("▍");
+  bar.font = Font.systemFont(11);
+  bar.textColor = TEAL;
+
+  const body = line.addStack();
+  body.layoutVertically();
+  body.spacing = 1;
+
+  const from = body.addText(`เตือนความจำ จาก ${data.reminder.from}`);
+  from.font = Font.mediumSystemFont(9);
+  from.textColor = MUTED;
+
+  const text = body.addText(data.reminder.text);
+  text.font = Font.systemFont(11);
+  text.textColor = INK;
+  text.lineLimit = lineLimit;
+}
+
+function buildWidget(data) {
+  const widget = new ListWidget();
+  widget.backgroundColor = CREAM;
+  widget.setPadding(12, 12, 12, 12);
+  widget.url = APP_URL;
+  widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
+
+  const small = config.widgetFamily === "small";
+
+  header(widget, data);
+  widget.addSpacer(8);
+  todaySection(widget, data, small ? 2 : 4);
+
+  if (!small) reminderSection(widget, data, 2);
+
+  widget.addSpacer();
+  return widget;
+}
+
+function errorWidget(message) {
+  const widget = new ListWidget();
+  widget.backgroundColor = CREAM;
+  widget.setPadding(12, 12, 12, 12);
+  widget.url = APP_URL;
+  widget.refreshAfterDate = new Date(Date.now() + 5 * 60 * 1000);
+
+  const title = widget.addText("Fairy & Fome");
+  title.font = Font.mediumSystemFont(11);
+  title.textColor = MUTED;
+  widget.addSpacer(6);
+
+  const text = widget.addText(message);
+  text.font = Font.systemFont(11);
+  text.textColor = WINE;
+  text.lineLimit = 3;
+  return widget;
+}
+
+let widget;
+try {
+  if (WIDGET_URL.startsWith("PASTE")) {
+    widget = errorWidget("ยังไม่ได้ใส่ลิงก์ — ไปที่ ตั้งค่า → Widget บน iPhone");
+  } else {
+    widget = buildWidget(await loadData());
+  }
+} catch (error) {
+  widget = errorWidget(`โหลดข้อมูลไม่ได้: ${error.message}`);
+}
+
+if (config.runsInWidget) {
+  Script.setWidget(widget);
+} else {
+  await widget.presentMedium();
+}
+Script.complete();

@@ -3,7 +3,9 @@ import type { NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 const PUBLIC_PATHS = new Set(["/login", "/icon", "/apple-icon"]);
-const PUBLIC_PREFIXES = ["/api/auth", "/api/calendar", "/api/cron"];
+// /api/calendar and /api/widget carry their own per-user token in the URL —
+// the calendar app and the iOS widget can't send a session cookie.
+const PUBLIC_PREFIXES = ["/api/auth", "/api/calendar", "/api/cron", "/api/widget"];
 // Static/PWA assets the OS or browser fetches without a session
 // (icon.tsx/apple-icon.tsx/manifest.ts generated routes, service worker, etc.)
 const PUBLIC_ASSET_PATTERN = /\.(png|ico|svg|webmanifest|json|webp|txt|xml)$/;
