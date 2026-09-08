@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
-import { DOCUMENT_TYPE_LABEL, generateDocNumber, parseLineItems, stripNullBytes } from "@/lib/document";
+import { DOCUMENT_TYPE_LABEL, parseLineItems, stripNullBytes } from "@/lib/document";
+import { nextDocNumber } from "@/lib/doc-number";
 import { notifyOtherUsers } from "@/lib/push";
 import type { DocumentType, DocumentStatus } from "@/generated/prisma/enums";
 
@@ -27,7 +28,7 @@ export async function createDocument(formData: FormData) {
     data: {
       jobId,
       type,
-      docNumber: generateDocNumber(type, date),
+      docNumber: await nextDocNumber(type, date),
       issueDate: date,
       buyerName: stripNullBytes(String(formData.get("buyerName") || "")).trim(),
       buyerAddress: optionalField(formData, "buyerAddress"),
@@ -117,7 +118,7 @@ export async function duplicateDocumentAs(
     data: {
       jobId,
       type: newType,
-      docNumber: generateDocNumber(newType, date),
+      docNumber: await nextDocNumber(newType, date),
       issueDate: date,
       buyerName: stripNullBytes(source.buyerName),
       buyerAddress: source.buyerAddress ? stripNullBytes(source.buyerAddress) : null,

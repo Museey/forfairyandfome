@@ -31,11 +31,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: ACCENT,
     fontWeight: "bold",
+    // Thai vowels/tone marks sit above the cap height — without room the
+    // document number underneath collides with the title.
+    lineHeight: 1.4,
   },
   date: {
     fontSize: 9.5,
     color: MUTED,
     marginTop: 4,
+  },
+  docNumber: {
+    fontSize: 9.5,
+    color: MUTED,
+    marginTop: 2,
   },
   partiesRow: {
     flexDirection: "row",
@@ -193,6 +201,7 @@ export type DocumentPdfData = {
 
 export function DocumentPdf({
   type,
+  docNumber,
   issueDate,
   seller,
   buyer,
@@ -202,10 +211,13 @@ export function DocumentPdf({
   const totals = computeTotals(lineItems, withholdingTaxPercent);
 
   return (
-    <Document title={DOCUMENT_TYPE_LABEL[type]}>
+    <Document title={`${DOCUMENT_TYPE_LABEL[type]} ${docNumber}`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{DOCUMENT_TYPE_LABEL[type]}</Text>
+          <View>
+            <Text style={styles.title}>{DOCUMENT_TYPE_LABEL[type]}</Text>
+            <Text style={styles.docNumber}>เลขที่ {docNumber}</Text>
+          </View>
           <Text style={styles.date}>{formatThaiBuddhistDate(issueDate)}</Text>
         </View>
 

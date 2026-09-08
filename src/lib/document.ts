@@ -72,11 +72,3 @@ export function formatThaiBuddhistDate(date: Date) {
   return `${day} ${month} ${year}`;
 }
 
-export function generateDocNumber(type: DocumentType, date: Date) {
-  const prefix = type === "QUOTATION" ? "QT" : type === "INVOICE" ? "IV" : "RC";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `${prefix}-${y}${m}${d}-${rand}`;
-}
