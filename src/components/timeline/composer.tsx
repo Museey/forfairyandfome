@@ -18,6 +18,7 @@ export function Composer({
   const [body, setBody] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [links, setLinks] = useState<string[]>([]);
+  const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,9 +64,16 @@ export function Composer({
       if (l.trim()) formData.append("links", l.trim());
     }
 
+    setFailed(false);
     startTransition(async () => {
-      await action(formData);
-      reset();
+      try {
+        await action(formData);
+        reset();
+      } catch {
+        // Keep whatever was typed so a failed post can just be retried
+        // instead of taking the whole app down and losing it.
+        setFailed(true);
+      }
     });
   }
 
@@ -137,6 +145,13 @@ export function Composer({
             );
           })}
         </div>
+      )}
+
+      {failed && (
+        <p className="mt-2 rounded-xl bg-danger-soft px-3 py-2 text-xs text-danger">
+          โพสต์ไม่สำเร็จ ข้อความยังอยู่ครบ — กดโพสต์อีกครั้งได้เลย
+          ถ้ายังไม่ได้ให้ปิดแอปแล้วเปิดใหม่
+        </p>
       )}
 
       <input
