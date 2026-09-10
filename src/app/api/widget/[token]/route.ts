@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { JOB_STATUS_ORDER } from "@/lib/job-status";
 import { dateKey } from "@/lib/calendar-grid";
 import { buildEventsByDay } from "@/lib/calendar-events";
-import { bangkokDayRange } from "@/lib/timezone";
+import { bangkokDayRange, bangkokMidnight } from "@/lib/timezone";
 import { groupFeedRows } from "@/lib/feed";
 
 // Read by the iOS home-screen widget (Scriptable), which can't hold a session
@@ -27,9 +26,8 @@ export async function GET(
   const today = new Date();
   const { start: todayStart, end: todayEnd } = bangkokDayRange(0, today);
 
-  const [statusCounts, allJobsWithDates, todayJobCheckEvents, reminderRows] =
+  const [allJobsWithDates, todayJobCheckEvents, reminderRows] =
     await Promise.all([
-      prisma.job.groupBy({ by: ["status"], _count: true }),
       prisma.job.findMany({
         select: {
           id: true,
@@ -53,22 +51,17 @@ export async function GET(
       }),
     ]);
 
-  const countMap = new Map(statusCounts.map((s) => [s.status, s._count]));
-  const activeCount = JOB_STATUS_ORDER.filter((s) => s !== "PAID").reduce(
-    (sum, s) => sum + (countMap.get(s) ?? 0),
-    0,
-  );
-
   const jobCheckEvents = todayJobCheckEvents.filter(
     (e): e is typeof e & { jobId: string; job: NonNullable<typeof e.job> } =>
       e.job !== null,
   );
   const eventsByDay = buildEventsByDay(allJobsWithDates, jobCheckEvents);
-  const todayEvents = (eventsByDay.get(dateKey(today)) ?? []).map((event) => ({
-    title: event.jobTitle,
-    label: event.label,
-    color: event.color,
-  }));
+  const agendaFor = (date: Date) =>
+    (eventsByDay.get(dateKey(date)) ?? []).map((event) => ({
+      title: event.jobTitle,
+      label: event.label,
+      color: event.color,
+    }));
 
   const latestReminder = groupFeedRows(
     reminderRows.map((r) => ({
@@ -97,8 +90,8 @@ export async function GET(
   return NextResponse.json(
     {
       user: calendarToken.user.name,
-      activeCount,
-      today: todayEvents,
+      today: agendaFor(today),
+      tomorrow: agendaFor(bangkokMidnight(1, today)),
       reminder,
       updatedAt: new Date().toISOString(),
     },

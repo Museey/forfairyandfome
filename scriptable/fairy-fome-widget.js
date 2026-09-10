@@ -26,39 +26,26 @@ async function loadData() {
   return req.loadJSON();
 }
 
-function header(widget, data) {
-  const row = widget.addStack();
-  row.centerAlignContent();
-
-  const title = row.addText("Fairy & Fome");
+function header(widget) {
+  const title = widget.addText("Fairy & Fome");
   title.font = Font.mediumSystemFont(11);
   title.textColor = MUTED;
-
-  row.addSpacer();
-
-  const count = row.addText(String(data.activeCount));
-  count.font = Font.boldSystemFont(15);
-  count.textColor = WINE;
-
-  const unit = row.addText(" งานค้าง");
-  unit.font = Font.systemFont(10);
-  unit.textColor = MUTED;
 }
 
-function todaySection(widget, data, maxRows) {
-  const heading = widget.addText("วันนี้");
-  heading.font = Font.semiboldSystemFont(12);
-  heading.textColor = INK;
+function agendaSection(widget, heading, events, maxRows) {
+  const label = widget.addText(heading);
+  label.font = Font.semiboldSystemFont(12);
+  label.textColor = INK;
   widget.addSpacer(4);
 
-  if (!data.today || data.today.length === 0) {
+  if (!events || events.length === 0) {
     const empty = widget.addText("ไม่มีนัดหมาย");
     empty.font = Font.systemFont(11);
     empty.textColor = MUTED;
     return;
   }
 
-  for (const event of data.today.slice(0, maxRows)) {
+  for (const event of events.slice(0, maxRows)) {
     const row = widget.addStack();
     row.centerAlignContent();
     row.spacing = 5;
@@ -75,7 +62,7 @@ function todaySection(widget, data, maxRows) {
     widget.addSpacer(3);
   }
 
-  const extra = data.today.length - maxRows;
+  const extra = events.length - maxRows;
   if (extra > 0) {
     const more = widget.addText(`+ อีก ${extra} รายการ`);
     more.font = Font.systemFont(10);
@@ -117,9 +104,11 @@ function buildWidget(data) {
 
   const small = config.widgetFamily === "small";
 
-  header(widget, data);
+  header(widget);
   widget.addSpacer(8);
-  todaySection(widget, data, small ? 2 : 4);
+  agendaSection(widget, "วันนี้", data.today, small ? 2 : 3);
+  widget.addSpacer(8);
+  agendaSection(widget, "พรุ่งนี้", data.tomorrow, small ? 1 : 3);
 
   if (!small) reminderSection(widget, data, 2);
 
