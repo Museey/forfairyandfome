@@ -4,7 +4,6 @@ import { dateKey } from "@/lib/calendar-grid";
 import { buildEventsByDay } from "@/lib/calendar-events";
 import { bangkokDayRange, bangkokMidnight } from "@/lib/timezone";
 import { groupFeedRows } from "@/lib/feed";
-import type { BoardTopic } from "@/generated/prisma/enums";
 
 // Read by the iOS home-screen widget (Scriptable), which can't hold a session
 // cookie — it authenticates with the same per-user token as the calendar feed.
@@ -45,6 +44,7 @@ export async function GET(
         include: { user: true, job: true },
       }),
       prisma.boardPost.findMany({
+        where: { topic: "REMINDER" },
         include: { author: true },
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       }),
@@ -64,10 +64,10 @@ export async function GET(
 
   const viewerId = calendarToken.userId;
 
-  /** Latest post on a board, as a line the widget can print. */
-  function latestPost(topic: BoardTopic, fromOthersOnly = false) {
+  /** The reminder the *other* person left — your own isn't news to you. */
+  function latestReminder() {
     const rows = boardRows.filter(
-      (r) => r.topic === topic && (!fromOthersOnly || r.authorId !== viewerId),
+      (r) => r.topic === "REMINDER" && r.authorId !== viewerId,
     );
     const latest = groupFeedRows(
       rows.map((r) => ({
@@ -97,11 +97,7 @@ export async function GET(
       user: calendarToken.user.name,
       today: agendaFor(today),
       tomorrow: agendaFor(bangkokMidnight(1, today)),
-      // Your own reminder isn't news to you; Content and Slip are worth
-      // seeing either way, since only one person posts each.
-      reminder: latestPost("REMINDER", true),
-      content: latestPost("CONTENT"),
-      slip: latestPost("SLIP"),
+      reminder: latestReminder(),
       updatedAt: new Date().toISOString(),
     },
     { headers: { "Cache-Control": "no-store" } },

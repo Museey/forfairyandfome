@@ -21,26 +21,10 @@ const INK = new Color("#3D2B2E");
 const MUTED = new Color("#8A7679");
 const TEAL = new Color("#0E7C6B");
 
-// How much fits on each widget size. `notes` are the boards printed under
-// the agenda, in order. A widget has a fixed height and clips anything that
-// doesn't fit rather than scrolling, so these are deliberately conservative —
-// if a size looks too empty on your phone, raise its numbers.
-const LAYOUT = {
-  small: { today: 2, tomorrow: 1, notes: [], noteLines: 1 },
-  medium: { today: 3, tomorrow: 3, notes: ["reminder"], noteLines: 2 },
-  large: {
-    today: 4,
-    tomorrow: 3,
-    notes: ["reminder", "content", "slip"],
-    noteLines: 1,
-  },
-};
-
-const NOTE_LABEL = {
-  reminder: "เตือนความจำ",
-  content: "Content",
-  slip: "Slip",
-};
+// Every agenda item is listed, so on a busy day the taller sizes are the
+// ones that can actually show them all — a widget has a fixed height and
+// clips whatever doesn't fit rather than scrolling. The small size leaves
+// the reminder out because the agenda alone tends to fill it.
 
 async function loadData() {
   const req = new Request(WIDGET_URL);
@@ -54,7 +38,7 @@ function header(widget) {
   title.textColor = MUTED;
 }
 
-function agendaSection(widget, heading, events, maxRows) {
+function agendaSection(widget, heading, events) {
   const label = widget.addText(heading);
   label.font = Font.semiboldSystemFont(12);
   label.textColor = INK;
@@ -67,7 +51,7 @@ function agendaSection(widget, heading, events, maxRows) {
     return;
   }
 
-  for (const event of events.slice(0, maxRows)) {
+  for (const event of events) {
     const row = widget.addStack();
     row.centerAlignContent();
     row.spacing = 5;
@@ -83,16 +67,9 @@ function agendaSection(widget, heading, events, maxRows) {
 
     widget.addSpacer(3);
   }
-
-  const extra = events.length - maxRows;
-  if (extra > 0) {
-    const more = widget.addText(`+ อีก ${extra} รายการ`);
-    more.font = Font.systemFont(10);
-    more.textColor = MUTED;
-  }
 }
 
-function noteSection(widget, label, note, lineLimit) {
+function reminderSection(widget, note, lineLimit) {
   if (!note || !note.text) return;
 
   widget.addSpacer(6);
@@ -107,7 +84,7 @@ function noteSection(widget, label, note, lineLimit) {
   body.layoutVertically();
   body.spacing = 1;
 
-  const from = body.addText(`${label} จาก ${note.from}`);
+  const from = body.addText(`เตือนความจำ จาก ${note.from}`);
   from.font = Font.mediumSystemFont(9);
   from.textColor = MUTED;
 
@@ -124,20 +101,15 @@ function buildWidget(data) {
   widget.url = APP_URL;
   widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
 
-  // extraLarge (iPad) has at least as much room as large.
-  const layout =
-    LAYOUT[config.widgetFamily] ??
-    (config.widgetFamily === "extraLarge" ? LAYOUT.large : LAYOUT.medium);
+  const small = config.widgetFamily === "small";
 
   header(widget);
   widget.addSpacer(8);
-  agendaSection(widget, "วันนี้", data.today, layout.today);
+  agendaSection(widget, "วันนี้", data.today);
   widget.addSpacer(8);
-  agendaSection(widget, "พรุ่งนี้", data.tomorrow, layout.tomorrow);
+  agendaSection(widget, "พรุ่งนี้", data.tomorrow);
 
-  for (const key of layout.notes) {
-    noteSection(widget, NOTE_LABEL[key], data[key], layout.noteLines);
-  }
+  if (!small) reminderSection(widget, data.reminder, 2);
 
   widget.addSpacer();
   return widget;
