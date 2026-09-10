@@ -14,7 +14,7 @@
 const WIDGET_URL = "PASTE_YOUR_WIDGET_URL_HERE";
 const APP_URL = "https://forfairyandfome.vercel.app/";
 
-const CREAM = new Color("#FAF7EA");
+const SKY = new Color("#C1E1F0");
 const WINE = new Color("#852936");
 const INK = new Color("#3D2B2E");
 const MUTED = new Color("#8A7679");
@@ -97,7 +97,7 @@ function reminderSection(widget, data, lineLimit) {
 
 function buildWidget(data) {
   const widget = new ListWidget();
-  widget.backgroundColor = CREAM;
+  widget.backgroundColor = SKY;
   widget.setPadding(12, 12, 12, 12);
   widget.url = APP_URL;
   widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
@@ -118,7 +118,7 @@ function buildWidget(data) {
 
 function errorWidget(message) {
   const widget = new ListWidget();
-  widget.backgroundColor = CREAM;
+  widget.backgroundColor = SKY;
   widget.setPadding(12, 12, 12, 12);
   widget.url = APP_URL;
   widget.refreshAfterDate = new Date(Date.now() + 5 * 60 * 1000);

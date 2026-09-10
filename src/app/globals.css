@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  /* Cream background */
-  --color-bg: #faf7ea;
+  /* Sky background */
+  --color-bg: #c1e1f0;
   --color-bg-soft: #f1e8d8;
   /* Cards/sections */
   --color-card: #ffffff;

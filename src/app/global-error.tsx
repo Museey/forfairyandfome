@@ -17,7 +17,7 @@ export default function GlobalError({ reset }: { reset: () => void }) {
           gap: 16,
           padding: 24,
           textAlign: "center",
-          background: "#faf7ea",
+          background: "#c1e1f0",
           color: "#3d2b2e",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
