@@ -4,6 +4,7 @@ import { dateKey } from "@/lib/calendar-grid";
 import { buildEventsByDay } from "@/lib/calendar-events";
 import { bangkokDayRange, bangkokMidnight } from "@/lib/timezone";
 import { groupFeedRows } from "@/lib/feed";
+import type { BoardTopic } from "@/generated/prisma/enums";
 
 // Read by the iOS home-screen widget (Scriptable), which can't hold a session
 // cookie — it authenticates with the same per-user token as the calendar feed.
@@ -26,7 +27,7 @@ export async function GET(
   const today = new Date();
   const { start: todayStart, end: todayEnd } = bangkokDayRange(0, today);
 
-  const [allJobsWithDates, todayJobCheckEvents, reminderRows] =
+  const [allJobsWithDates, todayJobCheckEvents, boardRows] =
     await Promise.all([
       prisma.job.findMany({
         select: {
@@ -43,9 +44,7 @@ export async function GET(
         where: { occurredAt: { gte: todayStart, lt: todayEnd }, jobId: { not: null } },
         include: { user: true, job: true },
       }),
-      // The reminder worth surfacing is the one the *other* person left.
       prisma.boardPost.findMany({
-        where: { topic: "REMINDER", authorId: { not: calendarToken.userId } },
         include: { author: true },
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       }),
@@ -63,36 +62,46 @@ export async function GET(
       color: event.color,
     }));
 
-  const latestReminder = groupFeedRows(
-    reminderRows.map((r) => ({
-      id: r.id,
-      groupId: r.groupId,
-      type: r.type,
-      body: r.content,
-      attachmentUrl: r.type === "LINK" ? null : r.fileUrl,
-      linkUrl: r.type === "LINK" ? r.fileUrl : null,
-      createdAt: r.createdAt,
-      author: r.author,
-    })),
-  )[0];
+  const viewerId = calendarToken.userId;
 
-  const reminder = latestReminder
-    ? {
-        from: latestReminder.author.name,
-        text:
-          latestReminder.body ??
-          (latestReminder.attachments.length > 0
-            ? `ส่ง ${latestReminder.attachments.length} ไฟล์แนบ`
-            : ""),
-      }
-    : null;
+  /** Latest post on a board, as a line the widget can print. */
+  function latestPost(topic: BoardTopic, fromOthersOnly = false) {
+    const rows = boardRows.filter(
+      (r) => r.topic === topic && (!fromOthersOnly || r.authorId !== viewerId),
+    );
+    const latest = groupFeedRows(
+      rows.map((r) => ({
+        id: r.id,
+        groupId: r.groupId,
+        type: r.type,
+        body: r.content,
+        attachmentUrl: r.type === "LINK" ? null : r.fileUrl,
+        linkUrl: r.type === "LINK" ? r.fileUrl : null,
+        createdAt: r.createdAt,
+        author: r.author,
+      })),
+    )[0];
+    if (!latest) return null;
+    return {
+      from: latest.author.name,
+      text:
+        latest.body ??
+        (latest.attachments.length > 0
+          ? `ส่ง ${latest.attachments.length} ไฟล์แนบ`
+          : ""),
+    };
+  }
 
   return NextResponse.json(
     {
       user: calendarToken.user.name,
       today: agendaFor(today),
       tomorrow: agendaFor(bangkokMidnight(1, today)),
-      reminder,
+      // Your own reminder isn't news to you; Content and Slip are worth
+      // seeing either way, since only one person posts each.
+      reminder: latestPost("REMINDER", true),
+      content: latestPost("CONTENT"),
+      slip: latestPost("SLIP"),
       updatedAt: new Date().toISOString(),
     },
     { headers: { "Cache-Control": "no-store" } },

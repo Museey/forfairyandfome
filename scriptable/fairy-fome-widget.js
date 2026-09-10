@@ -7,9 +7,10 @@
 //   4. On the home screen: long-press → + → Scriptable → pick a size →
 //      add it, then long-press the widget → Edit Widget → Script = this one.
 //
-// Supports small and medium widgets. iOS decides when to refresh (usually
-// every 15-30 min), so this is a glance, not a live feed — push notifications
-// are still what tell you about something the moment it happens.
+// One script covers every widget size — Scriptable tells it which size is
+// being drawn, so the large widget just shows more. iOS decides when to
+// refresh (usually every 15-30 min), so this is a glance, not a live feed —
+// push notifications are still what tell you the moment something happens.
 
 const WIDGET_URL = "PASTE_YOUR_WIDGET_URL_HERE";
 const APP_URL = "https://forfairyandfome.vercel.app/";
@@ -19,6 +20,27 @@ const WINE = new Color("#852936");
 const INK = new Color("#3D2B2E");
 const MUTED = new Color("#8A7679");
 const TEAL = new Color("#0E7C6B");
+
+// How much fits on each widget size. `notes` are the boards printed under
+// the agenda, in order. A widget has a fixed height and clips anything that
+// doesn't fit rather than scrolling, so these are deliberately conservative —
+// if a size looks too empty on your phone, raise its numbers.
+const LAYOUT = {
+  small: { today: 2, tomorrow: 1, notes: [], noteLines: 1 },
+  medium: { today: 3, tomorrow: 3, notes: ["reminder"], noteLines: 2 },
+  large: {
+    today: 4,
+    tomorrow: 3,
+    notes: ["reminder", "content", "slip"],
+    noteLines: 1,
+  },
+};
+
+const NOTE_LABEL = {
+  reminder: "เตือนความจำ",
+  content: "Content",
+  slip: "Slip",
+};
 
 async function loadData() {
   const req = new Request(WIDGET_URL);
@@ -70,8 +92,8 @@ function agendaSection(widget, heading, events, maxRows) {
   }
 }
 
-function reminderSection(widget, data, lineLimit) {
-  if (!data.reminder || !data.reminder.text) return;
+function noteSection(widget, label, note, lineLimit) {
+  if (!note || !note.text) return;
 
   widget.addSpacer(6);
   const line = widget.addStack();
@@ -85,11 +107,11 @@ function reminderSection(widget, data, lineLimit) {
   body.layoutVertically();
   body.spacing = 1;
 
-  const from = body.addText(`เตือนความจำ จาก ${data.reminder.from}`);
+  const from = body.addText(`${label} จาก ${note.from}`);
   from.font = Font.mediumSystemFont(9);
   from.textColor = MUTED;
 
-  const text = body.addText(data.reminder.text);
+  const text = body.addText(note.text);
   text.font = Font.systemFont(11);
   text.textColor = INK;
   text.lineLimit = lineLimit;
@@ -102,15 +124,20 @@ function buildWidget(data) {
   widget.url = APP_URL;
   widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
 
-  const small = config.widgetFamily === "small";
+  // extraLarge (iPad) has at least as much room as large.
+  const layout =
+    LAYOUT[config.widgetFamily] ??
+    (config.widgetFamily === "extraLarge" ? LAYOUT.large : LAYOUT.medium);
 
   header(widget);
   widget.addSpacer(8);
-  agendaSection(widget, "วันนี้", data.today, small ? 2 : 3);
+  agendaSection(widget, "วันนี้", data.today, layout.today);
   widget.addSpacer(8);
-  agendaSection(widget, "พรุ่งนี้", data.tomorrow, small ? 1 : 3);
+  agendaSection(widget, "พรุ่งนี้", data.tomorrow, layout.tomorrow);
 
-  if (!small) reminderSection(widget, data, 2);
+  for (const key of layout.notes) {
+    noteSection(widget, NOTE_LABEL[key], data[key], layout.noteLines);
+  }
 
   widget.addSpacer();
   return widget;
