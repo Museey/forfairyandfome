@@ -1,18 +1,22 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { TabBar } from "@/components/tab-bar";
 import { DocumentCard } from "@/components/documents/document-card";
+import { DocumentSearch } from "@/components/documents/document-search";
 import { OverviewTables } from "@/components/documents/overview-table";
+import { Pagination } from "@/components/documents/pagination";
 import { PayslipCard } from "@/components/documents/payslip-card";
 import { TimesheetCard } from "@/components/documents/timesheet-card";
 import { TaxDocumentList } from "@/components/documents/tax-document-list";
 import { TaxDocumentUploader } from "@/components/documents/tax-document-uploader";
-import { DocumentSearch } from "@/components/documents/document-search";
-import { Pagination } from "@/components/documents/pagination";
 import { loadDocumentOverview } from "@/lib/documents-overview";
+import {
+  loadDocumentPage,
+  loadPayslipPage,
+  loadTaxDocumentPage,
+  loadTimesheetPage,
+} from "@/lib/documents-list";
 import { bangkokYearMonth } from "@/lib/timezone";
-import { Prisma } from "@/generated/prisma/client";
 import type { DocumentType, TaxDocType } from "@/generated/prisma/enums";
 
 const TABS = [
@@ -43,22 +47,18 @@ const TAX_TAB: Partial<Record<TabKey, TaxDocType>> = {
   pnd90: "PND90",
 };
 
-/** Documents per page on the quotation/invoice/receipt tabs. */
-const PAGE_SIZE = 10;
-
-/** Matches the search box against everything printed on a document card. */
-function searchFilter(query: string): Prisma.DocumentWhereInput {
-  if (!query) return {};
-  const contains = { contains: query, mode: "insensitive" } as const;
-  return {
-    OR: [
-      { docNumber: contains },
-      { buyerName: contains },
-      { job: { is: { brandName: contains } } },
-      { job: { is: { title: contains } } },
-    ],
-  };
-}
+/** What each tab's search box says it will match. */
+const SEARCH_PLACEHOLDER: Partial<Record<TabKey, string>> = {
+  quotations: "ค้นหาแบรนด์ ชื่องาน เลขที่ หรือผู้ซื้อ",
+  invoices: "ค้นหาแบรนด์ ชื่องาน เลขที่ หรือผู้ซื้อ",
+  receipts: "ค้นหาแบรนด์ ชื่องาน เลขที่ หรือผู้ซื้อ",
+  payslips: "ค้นหาเดือน ปี ชื่อพนักงาน หรือเลขที่",
+  timesheets: "ค้นหาเดือน ปี ชื่อพนักงาน หรือเลขที่",
+  wht: "ค้นหาแบรนด์ ชื่องาน หรือหมายเหตุ",
+  pp30: "ค้นหาเดือน ปี หรือหมายเหตุ",
+  "purchase-sales": "ค้นหาเดือน ปี หรือหมายเหตุ",
+  pnd90: "ค้นหาปี หรือหมายเหตุ",
+};
 
 const CREATE_BUTTON =
   "flex items-center justify-center gap-2 rounded-card border border-dashed border-border-strong py-3 text-sm font-medium text-text-muted transition active:bg-card";
@@ -76,60 +76,44 @@ export default async function DocumentsPage({
     TABS.some((t) => t.key === requested) ? requested : "overview"
   ) as TabKey;
 
-  const documentType = DOCUMENT_TAB[tab];
-  const taxType = TAX_TAB[tab];
-  const now = bangkokYearMonth(new Date());
-
   const query = typeof sp.q === "string" ? sp.q.trim() : "";
   const page = Math.max(
     1,
     Number(typeof sp.page === "string" ? sp.page : 1) || 1,
   );
-  const documentWhere: Prisma.DocumentWhereInput = documentType
-    ? { type: documentType, ...searchFilter(query) }
-    : {};
 
-  const [
-    overview,
-    documents,
-    documentCount,
-    payslips,
-    timesheets,
-    taxDocuments,
-  ] = await Promise.all([
-    tab === "overview" ? loadDocumentOverview() : null,
-    documentType
-      ? prisma.document.findMany({
-          where: documentWhere,
-          include: { job: true },
-          orderBy: { issueDate: "desc" },
-          skip: (page - 1) * PAGE_SIZE,
-          take: PAGE_SIZE,
-        })
-      : null,
-    documentType ? prisma.document.count({ where: documentWhere }) : null,
-    tab === "payslips"
-      ? prisma.payslip.findMany({
-          orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
-        })
-      : null,
-    tab === "timesheets"
-      ? prisma.timesheet.findMany({
-          orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
-        })
-      : null,
-    taxType
-      ? prisma.taxDocument.findMany({
-          where: { type: taxType },
-          include: { job: true },
-          orderBy: [
-            { periodYear: "desc" },
-            { periodMonth: "desc" },
-            { createdAt: "desc" },
-          ],
-        })
-      : null,
-  ]);
+  const documentType = DOCUMENT_TAB[tab];
+  const taxType = TAX_TAB[tab];
+  const now = bangkokYearMonth(new Date());
+
+  // Exactly one tab is on screen, so only its own query runs.
+  const overview = tab === "overview" ? await loadDocumentOverview() : null;
+  const documents = documentType
+    ? await loadDocumentPage(documentType, query, page)
+    : null;
+  const payslips = tab === "payslips" ? await loadPayslipPage(query, page) : null;
+  const timesheets =
+    tab === "timesheets" ? await loadTimesheetPage(query, page) : null;
+  const taxDocuments = taxType
+    ? await loadTaxDocumentPage(taxType, query, page)
+    : null;
+
+  const totalPages =
+    documents?.totalPages ??
+    payslips?.totalPages ??
+    timesheets?.totalPages ??
+    taxDocuments?.totalPages ??
+    0;
+
+  function hrefFor(n: number) {
+    const params = new URLSearchParams({ tab });
+    if (query) params.set("q", query);
+    if (n > 1) params.set("page", String(n));
+    return `/documents?${params}`;
+  }
+
+  const placeholder = SEARCH_PLACEHOLDER[tab];
+  const notFound = `ไม่พบเอกสารที่ตรงกับ "${query}"`;
 
   return (
     <div className="flex flex-1 flex-col gap-4 pt-2">
@@ -140,30 +124,14 @@ export default async function DocumentsPage({
       <div className="flex flex-col gap-3 pb-6">
         {overview && <OverviewTables months={overview} />}
 
-        {documents && (
-          <>
-            <DocumentSearch placeholder="ค้นหาแบรนด์ ชื่องาน เลขที่ หรือผู้ซื้อ" />
-            {documents.length === 0 ? (
-              <Empty>
-                {query
-                  ? `ไม่พบเอกสารที่ตรงกับ "${query}"`
-                  : "ยังไม่มีเอกสารประเภทนี้"}
-              </Empty>
-            ) : (
-              documents.map((doc) => <DocumentCard key={doc.id} doc={doc} />)
-            )}
-            <Pagination
-              page={page}
-              totalPages={Math.ceil((documentCount ?? 0) / PAGE_SIZE)}
-              hrefFor={(n) => {
-                const params = new URLSearchParams({ tab });
-                if (query) params.set("q", query);
-                if (n > 1) params.set("page", String(n));
-                return `/documents?${params}`;
-              }}
-            />
-          </>
-        )}
+        {placeholder && <DocumentSearch placeholder={placeholder} />}
+
+        {documents &&
+          (documents.items.length === 0 ? (
+            <Empty>{query ? notFound : "ยังไม่มีเอกสารประเภทนี้"}</Empty>
+          ) : (
+            documents.items.map((doc) => <DocumentCard key={doc.id} doc={doc} />)
+          ))}
 
         {payslips && (
           <>
@@ -171,10 +139,10 @@ export default async function DocumentsPage({
               <Plus className="h-4 w-4" />
               สร้างเอกสาร
             </Link>
-            {payslips.length === 0 ? (
-              <Empty>ยังไม่มีสลิปเงินเดือน</Empty>
+            {payslips.items.length === 0 ? (
+              <Empty>{query ? notFound : "ยังไม่มีสลิปเงินเดือน"}</Empty>
             ) : (
-              payslips.map((payslip) => (
+              payslips.items.map((payslip) => (
                 <PayslipCard key={payslip.id} payslip={payslip} />
               ))
             )}
@@ -187,10 +155,10 @@ export default async function DocumentsPage({
               <Plus className="h-4 w-4" />
               สร้างเอกสาร
             </Link>
-            {timesheets.length === 0 ? (
-              <Empty>ยังไม่มี Time sheet</Empty>
+            {timesheets.items.length === 0 ? (
+              <Empty>{query ? notFound : "ยังไม่มี Time sheet"}</Empty>
             ) : (
-              timesheets.map((timesheet) => (
+              timesheets.items.map((timesheet) => (
                 <TimesheetCard key={timesheet.id} timesheet={timesheet} />
               ))
             )}
@@ -201,8 +169,7 @@ export default async function DocumentsPage({
           <>
             {taxType === "WHT" ? (
               <p className="rounded-card border border-border bg-card p-3.5 text-xs text-text-muted">
-                WHT แนบเป็นราย Job — เปิดงานที่ต้องการ
-                แล้วแนบในแท็บเอกสารของงานนั้น
+                WHT แนบเป็นราย Job — เปิดงานที่ต้องการ แล้วแนบในแท็บเอกสารของงานนั้น
               </p>
             ) : (
               <TaxDocumentUploader
@@ -212,9 +179,15 @@ export default async function DocumentsPage({
                 defaultYear={now.year}
               />
             )}
-            <TaxDocumentList documents={taxDocuments} />
+            {taxDocuments.items.length === 0 && query ? (
+              <Empty>{notFound}</Empty>
+            ) : (
+              <TaxDocumentList documents={taxDocuments.items} />
+            )}
           </>
         )}
+
+        <Pagination page={page} totalPages={totalPages} hrefFor={hrefFor} />
       </div>
     </div>
   );
