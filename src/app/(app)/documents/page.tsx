@@ -8,8 +8,11 @@ import { PayslipCard } from "@/components/documents/payslip-card";
 import { TimesheetCard } from "@/components/documents/timesheet-card";
 import { TaxDocumentList } from "@/components/documents/tax-document-list";
 import { TaxDocumentUploader } from "@/components/documents/tax-document-uploader";
+import { DocumentSearch } from "@/components/documents/document-search";
+import { Pagination } from "@/components/documents/pagination";
 import { loadDocumentOverview } from "@/lib/documents-overview";
 import { bangkokYearMonth } from "@/lib/timezone";
+import { Prisma } from "@/generated/prisma/client";
 import type { DocumentType, TaxDocType } from "@/generated/prisma/enums";
 
 const TABS = [
@@ -40,6 +43,23 @@ const TAX_TAB: Partial<Record<TabKey, TaxDocType>> = {
   pnd90: "PND90",
 };
 
+/** Documents per page on the quotation/invoice/receipt tabs. */
+const PAGE_SIZE = 10;
+
+/** Matches the search box against everything printed on a document card. */
+function searchFilter(query: string): Prisma.DocumentWhereInput {
+  if (!query) return {};
+  const contains = { contains: query, mode: "insensitive" } as const;
+  return {
+    OR: [
+      { docNumber: contains },
+      { buyerName: contains },
+      { job: { is: { brandName: contains } } },
+      { job: { is: { title: contains } } },
+    ],
+  };
+}
+
 const CREATE_BUTTON =
   "flex items-center justify-center gap-2 rounded-card border border-dashed border-border-strong py-3 text-sm font-medium text-text-muted transition active:bg-card";
 
@@ -52,21 +72,42 @@ export default async function DocumentsPage({
 }: PageProps<"/documents">) {
   const sp = await searchParams;
   const requested = typeof sp.tab === "string" ? sp.tab : "";
-  const tab = (TABS.some((t) => t.key === requested) ? requested : "overview") as TabKey;
+  const tab = (
+    TABS.some((t) => t.key === requested) ? requested : "overview"
+  ) as TabKey;
 
   const documentType = DOCUMENT_TAB[tab];
   const taxType = TAX_TAB[tab];
   const now = bangkokYearMonth(new Date());
 
-  const [overview, documents, payslips, timesheets, taxDocuments] = await Promise.all([
+  const query = typeof sp.q === "string" ? sp.q.trim() : "";
+  const page = Math.max(
+    1,
+    Number(typeof sp.page === "string" ? sp.page : 1) || 1,
+  );
+  const documentWhere: Prisma.DocumentWhereInput = documentType
+    ? { type: documentType, ...searchFilter(query) }
+    : {};
+
+  const [
+    overview,
+    documents,
+    documentCount,
+    payslips,
+    timesheets,
+    taxDocuments,
+  ] = await Promise.all([
     tab === "overview" ? loadDocumentOverview() : null,
     documentType
       ? prisma.document.findMany({
-          where: { type: documentType },
+          where: documentWhere,
           include: { job: true },
           orderBy: { issueDate: "desc" },
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
         })
       : null,
+    documentType ? prisma.document.count({ where: documentWhere }) : null,
     tab === "payslips"
       ? prisma.payslip.findMany({
           orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
@@ -99,12 +140,30 @@ export default async function DocumentsPage({
       <div className="flex flex-col gap-3 pb-6">
         {overview && <OverviewTables months={overview} />}
 
-        {documents &&
-          (documents.length === 0 ? (
-            <Empty>ยังไม่มีเอกสารประเภทนี้</Empty>
-          ) : (
-            documents.map((doc) => <DocumentCard key={doc.id} doc={doc} />)
-          ))}
+        {documents && (
+          <>
+            <DocumentSearch placeholder="ค้นหาแบรนด์ ชื่องาน เลขที่ หรือผู้ซื้อ" />
+            {documents.length === 0 ? (
+              <Empty>
+                {query
+                  ? `ไม่พบเอกสารที่ตรงกับ "${query}"`
+                  : "ยังไม่มีเอกสารประเภทนี้"}
+              </Empty>
+            ) : (
+              documents.map((doc) => <DocumentCard key={doc.id} doc={doc} />)
+            )}
+            <Pagination
+              page={page}
+              totalPages={Math.ceil((documentCount ?? 0) / PAGE_SIZE)}
+              hrefFor={(n) => {
+                const params = new URLSearchParams({ tab });
+                if (query) params.set("q", query);
+                if (n > 1) params.set("page", String(n));
+                return `/documents?${params}`;
+              }}
+            />
+          </>
+        )}
 
         {payslips && (
           <>
@@ -142,7 +201,8 @@ export default async function DocumentsPage({
           <>
             {taxType === "WHT" ? (
               <p className="rounded-card border border-border bg-card p-3.5 text-xs text-text-muted">
-                WHT แนบเป็นราย Job — เปิดงานที่ต้องการ แล้วแนบในแท็บเอกสารของงานนั้น
+                WHT แนบเป็นราย Job — เปิดงานที่ต้องการ
+                แล้วแนบในแท็บเอกสารของงานนั้น
               </p>
             ) : (
               <TaxDocumentUploader

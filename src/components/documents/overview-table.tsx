@@ -40,7 +40,7 @@ function MonthTable({ month }: { month: OverviewMonth }) {
           <thead>
             <tr className="text-xs text-text-muted">
               <th className="border-b border-border px-3 py-2 text-left font-medium">
-                ชื่องาน
+                แบรนด์ / งาน
               </th>
               <th className="border-b border-border px-3 py-2 text-right font-medium">
                 จำนวนเงิน
@@ -60,9 +60,9 @@ function MonthTable({ month }: { month: OverviewMonth }) {
               <tr key={row.jobId}>
                 <td className="border-b border-border px-3 py-2.5">
                   <Link href={`/jobs/${row.jobId}?tab=documents`} className="block">
-                    <span className="block max-w-[9rem] truncate">{row.jobTitle}</span>
+                    <span className="block max-w-[9rem] truncate">{row.brandName}</span>
                     <span className="block max-w-[9rem] truncate text-xs text-text-faint">
-                      {row.brandName}
+                      {row.jobTitle}
                     </span>
                   </Link>
                 </td>
