@@ -7,6 +7,7 @@ import { requireCurrentUser } from "@/lib/auth";
 import { DOCUMENT_TYPE_LABEL, parseLineItems, stripNullBytes } from "@/lib/document";
 import { nextDocNumber } from "@/lib/doc-number";
 import { notifyOtherUsers } from "@/lib/push";
+import { deleteFile, uploadFile } from "@/lib/storage";
 import type { DocumentType, DocumentStatus } from "@/generated/prisma/enums";
 
 function optionalField(formData: FormData, key: string) {
@@ -41,6 +42,7 @@ export async function createDocument(formData: FormData) {
     },
   });
 
+  revalidatePath("/documents");
   revalidatePath(`/jobs/${jobId}`);
   redirect(`/jobs/${jobId}/documents/${doc.id}`);
 }
@@ -71,6 +73,7 @@ export async function updateDocument(formData: FormData) {
     },
   });
 
+  revalidatePath("/documents");
   revalidatePath(`/jobs/${jobId}/documents/${docId}`);
   revalidatePath(`/jobs/${jobId}`);
   redirect(`/jobs/${jobId}/documents/${docId}`);
@@ -100,6 +103,7 @@ export async function updateDocumentStatus(
     });
   }
 
+  revalidatePath("/documents");
   revalidatePath(`/jobs/${jobId}/documents/${docId}`);
   revalidatePath(`/jobs/${jobId}`);
 }
@@ -131,6 +135,7 @@ export async function duplicateDocumentAs(
     },
   });
 
+  revalidatePath("/documents");
   revalidatePath(`/jobs/${jobId}`);
   redirect(`/jobs/${jobId}/documents/${doc.id}`);
 }
@@ -140,7 +145,56 @@ export async function deleteDocument(formData: FormData) {
   const docId = String(formData.get("docId") || "");
   const jobId = String(formData.get("jobId") || "");
   if (!docId) return;
-  await prisma.document.delete({ where: { id: docId } });
+
+  const doc = await prisma.document.delete({ where: { id: docId } });
+  if (doc.signedFileUrl) await deleteFile(doc.signedFileUrl);
+
+  revalidatePath("/documents");
   revalidatePath(`/jobs/${jobId}`);
   redirect(`/jobs/${jobId}?tab=documents`);
+}
+
+/**
+ * Attach the scan of the signed copy. The draft is rendered on demand from
+ * the document's fields, so this is the only file we keep for a document —
+ * replacing an existing scan deletes the old one rather than orphaning it.
+ */
+export async function attachSignedCopy(formData: FormData) {
+  await requireCurrentUser();
+  const docId = String(formData.get("docId") || "");
+  const file = formData.get("file");
+  if (!docId || !(file instanceof File) || file.size === 0) return;
+
+  const existing = await prisma.document.findUnique({ where: { id: docId } });
+  if (!existing) return;
+
+  const url = await uploadFile(file, `documents/${docId}`);
+  await prisma.document.update({
+    where: { id: docId },
+    data: { signedFileUrl: url, signedAt: new Date() },
+  });
+  if (existing.signedFileUrl) await deleteFile(existing.signedFileUrl);
+
+  revalidatePath("/documents");
+  revalidatePath(`/jobs/${existing.jobId}`);
+  revalidatePath(`/jobs/${existing.jobId}/documents/${docId}`);
+}
+
+export async function removeSignedCopy(formData: FormData) {
+  await requireCurrentUser();
+  const docId = String(formData.get("docId") || "");
+  if (!docId) return;
+
+  const existing = await prisma.document.findUnique({ where: { id: docId } });
+  if (!existing?.signedFileUrl) return;
+
+  await prisma.document.update({
+    where: { id: docId },
+    data: { signedFileUrl: null, signedAt: null },
+  });
+  await deleteFile(existing.signedFileUrl);
+
+  revalidatePath("/documents");
+  revalidatePath(`/jobs/${existing.jobId}`);
+  revalidatePath(`/jobs/${existing.jobId}/documents/${docId}`);
 }

@@ -37,3 +37,29 @@ export function bangkokDayRange(offsetDays = 0, from: Date = new Date()) {
     end: bangkokMidnight(offsetDays + 1, from),
   };
 }
+
+/** [start, end) instants spanning one Bangkok calendar month (month is 1-12). */
+export function bangkokMonthRange(year: number, month: number) {
+  return {
+    start: new Date(Date.UTC(year, month - 1, 1) - BANGKOK_OFFSET_MS),
+    end: new Date(Date.UTC(year, month, 1) - BANGKOK_OFFSET_MS),
+  };
+}
+
+const BANGKOK_TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  timeZone: APP_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+/** "HH:MM" for the given instant, as seen in Bangkok. */
+export function bangkokTimeKey(date: Date) {
+  return BANGKOK_TIME_FORMATTER.format(date);
+}
+
+/** The year and 1-12 month the given instant falls in, in Bangkok. */
+export function bangkokYearMonth(date: Date) {
+  const [year, month] = bangkokDateKey(date).split("-").map(Number);
+  return { year, month };
+}

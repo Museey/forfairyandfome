@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { ChevronLeft, MessageSquareText, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { TabBar } from "@/components/tab-bar";
+import { DocumentCard } from "@/components/documents/document-card";
+import { TaxDocumentList } from "@/components/documents/tax-document-list";
+import { UploadFileButton } from "@/components/documents/upload-file-button";
+import { uploadTaxDocument } from "@/app/(app)/documents/actions";
 import { StatusSelect } from "@/components/status-select";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Button } from "@/components/ui/button";
@@ -29,14 +33,6 @@ import { parseScenes } from "@/lib/storyline";
 import { saveDetailsOfWork, saveDetailsOfWorkDraft } from "@/app/(app)/jobs/[id]/details-of-work-actions";
 import { ProductImageGallery } from "@/components/details-of-work/product-image-gallery";
 import { Textarea } from "@/components/ui/field";
-import {
-  DOCUMENT_STATUS_COLOR,
-  DOCUMENT_STATUS_LABEL,
-  DOCUMENT_TYPE_LABEL,
-  computeTotals,
-  formatBaht,
-  parseLineItems,
-} from "@/lib/document";
 import { DeleteJobButton } from "@/components/delete-job-button";
 import { PdfExportButton } from "@/components/pdf-export-button";
 import { PdfPreviewButton } from "@/components/pdf-preview-button";
@@ -99,6 +95,16 @@ export default async function JobDetailPage({
     tab === "documents"
       ? await prisma.document.findMany({
           where: { jobId: id },
+          include: { job: true },
+          orderBy: { createdAt: "desc" },
+        })
+      : [];
+
+  const whtDocuments =
+    tab === "documents"
+      ? await prisma.taxDocument.findMany({
+          where: { jobId: id, type: "WHT" },
+          include: { job: true },
           orderBy: { createdAt: "desc" },
         })
       : [];
@@ -468,43 +474,23 @@ export default async function JobDetailPage({
               ยังไม่มีเอกสารสำหรับงานนี้
             </p>
           ) : (
-            documents.map((doc) => {
-              const totals = computeTotals(
-                parseLineItems(doc.lineItems),
-                doc.withholdingTaxPercent,
-              );
-              return (
-                <Link
-                  key={doc.id}
-                  href={`/jobs/${job.id}/documents/${doc.id}`}
-                  className="rounded-card border border-border bg-card p-4 transition active:scale-[0.99] active:bg-card-hover"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium">
-                        {DOCUMENT_TYPE_LABEL[doc.type]}
-                      </p>
-                      <p className="mt-0.5 text-xs text-text-faint">
-                        {doc.docNumber} · {doc.buyerName}
-                      </p>
-                    </div>
-                    <span
-                      className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium"
-                      style={{
-                        backgroundColor: `${DOCUMENT_STATUS_COLOR[doc.status]}22`,
-                        color: DOCUMENT_STATUS_COLOR[doc.status],
-                      }}
-                    >
-                      {DOCUMENT_STATUS_LABEL[doc.status]}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-right text-sm font-semibold text-teal">
-                    {formatBaht(totals.net)}
-                  </p>
-                </Link>
-              );
-            })
+            documents.map((doc) => <DocumentCard key={doc.id} doc={doc} />)
           )}
+
+          <section className="mt-4 border-t border-border pt-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-medium text-text-muted">
+                หัก ณ ที่จ่าย (WHT)
+              </h2>
+              <UploadFileButton
+                action={uploadTaxDocument}
+                fields={{ type: "WHT", jobId: job.id }}
+                label="แนบเอกสาร"
+                className="rounded-full border border-border px-3 py-1.5 text-xs text-text-muted"
+              />
+            </div>
+            <TaxDocumentList documents={whtDocuments} />
+          </section>
         </div>
       )}
 

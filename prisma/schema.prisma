@@ -84,6 +84,7 @@ model User {
   calendarTokens    CalendarToken[]
   pushSubscriptions PushSubscription[]
   boardPosts        BoardPost[]
+  taxDocuments      TaxDocument[]
 }
 
 model Job {
@@ -109,6 +110,7 @@ model Job {
   storyline     Storyline?
   detailsOfWork DetailsOfWork?
   documents     Document[]
+  taxDocuments  TaxDocument[]
   checkEvents   CheckEvent[]
 
   @@index([status])
@@ -182,12 +184,12 @@ model DetailsOfWork {
 }
 
 model Document {
-  id                    String         @id @default(cuid())
-  jobId                 String
-  job                   Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  type                  DocumentType
-  docNumber             String
-  issueDate             DateTime
+  id        String       @id @default(cuid())
+  jobId     String
+  job       Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type      DocumentType
+  docNumber String
+  issueDate DateTime
 
   buyerName        String
   buyerAddress     String?
@@ -200,6 +202,11 @@ model Document {
   withholdingTaxPercent Float          @default(3)
   status                DocumentStatus @default(DRAFT)
   pdfUrl                String?
+
+  // The draft is rendered on demand from the fields above; the signed copy is
+  // a scan of the paper that came back, so it's the only one we store.
+  signedFileUrl String?
+  signedAt      DateTime?
 
   createdAt DateTime @default(now())
 
@@ -282,4 +289,81 @@ model SellerProfile {
   email           String
 
   updatedAt DateTime @updatedAt
+}
+
+// Fairy's monthly payslip. Not tied to a job — and unlike Document it has no
+// buyer and no VAT — so it gets its own table rather than nullable columns
+// on Document.
+model Payslip {
+  id           String   @id @default(cuid())
+  docNumber    String
+  periodYear   Int
+  periodMonth  Int // 1-12
+  employeeName String
+  position     String?
+  paymentDate  DateTime
+
+  /// LineItem[] — เงินเดือน แล้วตามด้วยรายได้อื่น
+  earnings   Json
+  /// LineItem[] — ประกันสังคม ภาษีหัก ณ ที่จ่าย ฯลฯ
+  deductions Json
+
+  note   String?
+  status DocumentStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+
+  @@unique([periodYear, periodMonth])
+}
+
+// Fairy's monthly timesheet. Rows are seeded from CheckEvent for the month
+// and then edited by hand, so they're stored as plain JSON rather than
+// pointing back at the check-in rows.
+model Timesheet {
+  id           String  @id @default(cuid())
+  docNumber    String
+  periodYear   Int
+  periodMonth  Int // 1-12
+  employeeName String
+  position     String?
+
+  /// TimesheetRow[] — { date: "YYYY-MM-DD", task, start: "HH:MM", end: "HH:MM" }
+  rows        Json
+  ratePerHour Float?
+
+  createdAt DateTime @default(now())
+
+  @@unique([periodYear, periodMonth])
+}
+
+enum TaxDocType {
+  WHT // หัก ณ ที่จ่าย — per job
+  PP30 // ภ.พ.30 — per month
+  PURCHASE_SALES_TAX // ภาษีซื้อ/ขาย — per month
+  PND90 // ภ.ง.ด.90 — per year
+}
+
+// The four tax forms we only ever file away: no fields to key in, just a
+// scan. They differ only in what period they cover, so one table holds all
+// four — periodMonth is null for the yearly ภ.ง.ด.90, and jobId is set only
+// for WHT, which is filed against a job.
+model TaxDocument {
+  id   String     @id @default(cuid())
+  type TaxDocType
+
+  jobId String?
+  job   Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  periodYear  Int
+  periodMonth Int?
+
+  fileUrl      String
+  note         String?
+  uploadedById String
+  uploadedBy   User    @relation(fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([type, periodYear, periodMonth])
+  @@index([jobId])
 }

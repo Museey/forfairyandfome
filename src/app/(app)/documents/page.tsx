@@ -1,72 +1,160 @@
 import Link from "next/link";
-import { FileText } from "lucide-react";
+import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import {
-  DOCUMENT_STATUS_COLOR,
-  DOCUMENT_STATUS_LABEL,
-  DOCUMENT_TYPE_LABEL,
-  computeTotals,
-  formatBaht,
-  parseLineItems,
-} from "@/lib/document";
+import { TabBar } from "@/components/tab-bar";
+import { DocumentCard } from "@/components/documents/document-card";
+import { OverviewTables } from "@/components/documents/overview-table";
+import { PayslipCard } from "@/components/documents/payslip-card";
+import { TimesheetCard } from "@/components/documents/timesheet-card";
+import { TaxDocumentList } from "@/components/documents/tax-document-list";
+import { TaxDocumentUploader } from "@/components/documents/tax-document-uploader";
+import { loadDocumentOverview } from "@/lib/documents-overview";
+import { bangkokYearMonth } from "@/lib/timezone";
+import type { DocumentType, TaxDocType } from "@/generated/prisma/enums";
 
-export default async function DocumentsPage() {
-  const documents = await prisma.document.findMany({
-    include: { job: true },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+const TABS = [
+  { key: "overview", label: "เอกสารทั้งหมด" },
+  { key: "quotations", label: "ใบเสนอราคา" },
+  { key: "invoices", label: "ใบแจ้งหนี้" },
+  { key: "receipts", label: "ใบเสร็จรับเงิน" },
+  { key: "payslips", label: "สลิปเงินเดือน" },
+  { key: "timesheets", label: "Time sheet" },
+  { key: "wht", label: "WHT" },
+  { key: "pp30", label: "ภ.พ.30" },
+  { key: "purchase-sales", label: "ภาษีซื้อ/ขาย" },
+  { key: "pnd90", label: "ภ.ง.ด.90" },
+] as const;
 
-  if (documents.length === 0) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-text-faint">
-        <FileText className="h-6 w-6" />
-        <p className="text-sm">ยังไม่มีเอกสารในระบบ</p>
-      </div>
-    );
-  }
+type TabKey = (typeof TABS)[number]["key"];
+
+const DOCUMENT_TAB: Partial<Record<TabKey, DocumentType>> = {
+  quotations: "QUOTATION",
+  invoices: "INVOICE",
+  receipts: "RECEIPT",
+};
+
+const TAX_TAB: Partial<Record<TabKey, TaxDocType>> = {
+  wht: "WHT",
+  pp30: "PP30",
+  "purchase-sales": "PURCHASE_SALES_TAX",
+  pnd90: "PND90",
+};
+
+const CREATE_BUTTON =
+  "flex items-center justify-center gap-2 rounded-card border border-dashed border-border-strong py-3 text-sm font-medium text-text-muted transition active:bg-card";
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="py-8 text-center text-sm text-text-faint">{children}</p>;
+}
+
+export default async function DocumentsPage({
+  searchParams,
+}: PageProps<"/documents">) {
+  const sp = await searchParams;
+  const requested = typeof sp.tab === "string" ? sp.tab : "";
+  const tab = (TABS.some((t) => t.key === requested) ? requested : "overview") as TabKey;
+
+  const documentType = DOCUMENT_TAB[tab];
+  const taxType = TAX_TAB[tab];
+  const now = bangkokYearMonth(new Date());
+
+  const [overview, documents, payslips, timesheets, taxDocuments] = await Promise.all([
+    tab === "overview" ? loadDocumentOverview() : null,
+    documentType
+      ? prisma.document.findMany({
+          where: { type: documentType },
+          include: { job: true },
+          orderBy: { issueDate: "desc" },
+        })
+      : null,
+    tab === "payslips"
+      ? prisma.payslip.findMany({
+          orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
+        })
+      : null,
+    tab === "timesheets"
+      ? prisma.timesheet.findMany({
+          orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
+        })
+      : null,
+    taxType
+      ? prisma.taxDocument.findMany({
+          where: { type: taxType },
+          include: { job: true },
+          orderBy: [
+            { periodYear: "desc" },
+            { periodMonth: "desc" },
+            { createdAt: "desc" },
+          ],
+        })
+      : null,
+  ]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 pt-2">
-      <h1 className="text-xl font-semibold">เอกสารทั้งหมด</h1>
+      <h1 className="text-xl font-semibold">เอกสาร</h1>
+
+      <TabBar basePath="/documents" active={tab} tabs={[...TABS]} />
 
       <div className="flex flex-col gap-3 pb-6">
-        {documents.map((doc) => {
-          const totals = computeTotals(
-            parseLineItems(doc.lineItems),
-            doc.withholdingTaxPercent,
-          );
-          return (
-            <Link
-              key={doc.id}
-              href={`/jobs/${doc.jobId}/documents/${doc.id}`}
-              className="rounded-card border border-border bg-card p-4 transition active:scale-[0.99] active:bg-card-hover"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {DOCUMENT_TYPE_LABEL[doc.type]} · {doc.job.brandName}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-text-faint">
-                    {doc.docNumber} · {doc.buyerName}
-                  </p>
-                </div>
-                <span
-                  className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium"
-                  style={{
-                    backgroundColor: `${DOCUMENT_STATUS_COLOR[doc.status]}22`,
-                    color: DOCUMENT_STATUS_COLOR[doc.status],
-                  }}
-                >
-                  {DOCUMENT_STATUS_LABEL[doc.status]}
-                </span>
-              </div>
-              <p className="mt-2 text-right text-sm font-semibold text-teal">
-                {formatBaht(totals.net)}
-              </p>
+        {overview && <OverviewTables months={overview} />}
+
+        {documents &&
+          (documents.length === 0 ? (
+            <Empty>ยังไม่มีเอกสารประเภทนี้</Empty>
+          ) : (
+            documents.map((doc) => <DocumentCard key={doc.id} doc={doc} />)
+          ))}
+
+        {payslips && (
+          <>
+            <Link href="/documents/payslips/new" className={CREATE_BUTTON}>
+              <Plus className="h-4 w-4" />
+              สร้างเอกสาร
             </Link>
-          );
-        })}
+            {payslips.length === 0 ? (
+              <Empty>ยังไม่มีสลิปเงินเดือน</Empty>
+            ) : (
+              payslips.map((payslip) => (
+                <PayslipCard key={payslip.id} payslip={payslip} />
+              ))
+            )}
+          </>
+        )}
+
+        {timesheets && (
+          <>
+            <Link href="/documents/timesheets/new" className={CREATE_BUTTON}>
+              <Plus className="h-4 w-4" />
+              สร้างเอกสาร
+            </Link>
+            {timesheets.length === 0 ? (
+              <Empty>ยังไม่มี Time sheet</Empty>
+            ) : (
+              timesheets.map((timesheet) => (
+                <TimesheetCard key={timesheet.id} timesheet={timesheet} />
+              ))
+            )}
+          </>
+        )}
+
+        {taxDocuments && taxType && (
+          <>
+            {taxType === "WHT" ? (
+              <p className="rounded-card border border-border bg-card p-3.5 text-xs text-text-muted">
+                WHT แนบเป็นราย Job — เปิดงานที่ต้องการ แล้วแนบในแท็บเอกสารของงานนั้น
+              </p>
+            ) : (
+              <TaxDocumentUploader
+                type={taxType}
+                scope={taxType === "PND90" ? "YEAR" : "MONTH"}
+                defaultPeriod={`${now.year}-${String(now.month).padStart(2, "0")}`}
+                defaultYear={now.year}
+              />
+            )}
+            <TaxDocumentList documents={taxDocuments} />
+          </>
+        )}
       </div>
     </div>
   );

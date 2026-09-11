@@ -59,7 +59,7 @@ export function formatBaht(amount: number) {
   return THB_FORMATTER.format(amount);
 }
 
-const THAI_MONTHS = [
+export const THAI_MONTHS = [
   "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
   "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
 ];
@@ -72,3 +72,23 @@ export function formatThaiBuddhistDate(date: Date) {
   return `${day} ${month} ${year}`;
 }
 
+
+/** "มกราคม 2026" for a 1-12 month number. Months are stored as year+month
+ *  integers rather than a Date so a period can never drift across a timezone. */
+export function formatMonthLabel(year: number, month: number) {
+  return `${THAI_MONTHS[month - 1] ?? month} ${year}`;
+}
+
+/** Same, in the Buddhist Era — business documents are always dated BE. */
+export function formatMonthLabelBuddhist(year: number, month: number) {
+  return formatMonthLabel(year + 543, month);
+}
+
+export function formatMonthLabelShort(year: number, month: number) {
+  return `${(THAI_MONTHS[month - 1] ?? String(month)).slice(0, 3)} ${year}`;
+}
+
+/** Sort key for a month, descending-friendly: 202601. */
+export function monthKey(year: number, month: number) {
+  return year * 100 + month;
+}
