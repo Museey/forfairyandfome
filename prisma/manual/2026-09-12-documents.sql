@@ -70,3 +70,11 @@ ALTER TABLE "TaxDocument" ADD CONSTRAINT "TaxDocument_jobId_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "TaxDocument" ADD CONSTRAINT "TaxDocument_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Row Level Security. The app reaches Postgres through Prisma as the table
+-- owner, which bypasses RLS, so no policies are needed — enabling it just
+-- closes the PostgREST path (anon/authenticated keys) that Supabase exposes
+-- on every project.
+ALTER TABLE "Payslip" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Timesheet" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "TaxDocument" ENABLE ROW LEVEL SECURITY;
