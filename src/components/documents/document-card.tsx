@@ -10,6 +10,7 @@ import {
 } from "@/lib/document";
 import { formatDateShort } from "@/lib/date";
 import { PdfPreviewButton } from "@/components/pdf-preview-button";
+import { RemoveSignedCopyButton } from "@/components/documents/remove-signed-copy-button";
 import { UploadFileButton } from "@/components/documents/upload-file-button";
 import { attachSignedCopy } from "@/app/(app)/jobs/[id]/document-actions";
 import type { Document, Job } from "@/generated/prisma/client";
@@ -93,6 +94,7 @@ export function DocumentCard({ doc }: { doc: Document & { job: Job } }) {
               >
                 ดูไฟล์
               </a>
+              <RemoveSignedCopyButton docId={doc.id} />
             </>
           ) : (
             <>
