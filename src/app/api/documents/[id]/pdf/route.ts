@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { registerPdfFonts } from "@/lib/pdf/fonts";
 import { DocumentPdf } from "@/lib/pdf/document-document";
-import { DOCUMENT_TYPE_LABEL, parseLineItems } from "@/lib/document";
+import { documentFileName, parseLineItems } from "@/lib/document";
 import { pdfContentDisposition } from "@/lib/pdf/content-disposition";
 
 export async function GET(
@@ -59,7 +59,7 @@ export async function GET(
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": pdfContentDisposition(
-        `${DOCUMENT_TYPE_LABEL[doc.type]} - ${doc.docNumber}`,
+        documentFileName(doc.type, doc.docNumber),
       ),
     },
   });

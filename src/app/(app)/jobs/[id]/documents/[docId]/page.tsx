@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Pencil, Trash2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { DOCUMENT_TYPE_LABEL, VAT_PERCENT, computeTotals, formatBaht, parseLineItems } from "@/lib/document";
+import { DOCUMENT_TYPE_LABEL, documentFileName, VAT_PERCENT, computeTotals, formatBaht, parseLineItems } from "@/lib/document";
 import { formatDate } from "@/lib/date";
 import { DocumentStatusSelect } from "@/components/documents/document-status-select";
 import { DuplicateAsButtons } from "@/components/documents/duplicate-as-buttons";
@@ -45,7 +45,7 @@ export default async function DocumentDetailPage({
         />
         <PdfExportButton
           url={`/api/documents/${doc.id}/pdf`}
-          filename={`${DOCUMENT_TYPE_LABEL[doc.type]} - ${doc.docNumber}.pdf`}
+          filename={`${documentFileName(doc.type, doc.docNumber)}.pdf`}
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"
         />
       </div>

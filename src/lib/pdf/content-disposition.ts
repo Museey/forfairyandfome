@@ -8,7 +8,10 @@
  * header doesn't affect it either way.
  */
 export function pdfContentDisposition(filename: string) {
-  const asciiFallback = filename.replace(/[^\x20-\x7E]/g, "_");
-  const encoded = encodeURIComponent(filename);
+  // Path separators would break the save on any platform, whichever form
+  // the browser picks.
+  const safe = filename.replace(/[/\\]/g, "-");
+  const asciiFallback = safe.replace(/[^\x20-\x7E]/g, "_");
+  const encoded = encodeURIComponent(safe);
   return `inline; filename="${asciiFallback}.pdf"; filename*=UTF-8''${encoded}.pdf`;
 }

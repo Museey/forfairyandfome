@@ -16,6 +16,14 @@ export const DOCUMENT_PDF_TITLE: Record<DocumentType, string> = {
   RECEIPT: "ใบเสร็จรับเงิน/ใบกำกับภาษี",
 };
 
+/**
+ * What a saved PDF is called. It follows the printed heading rather than the
+ * app's label, minus the slash — no filesystem accepts one in a name.
+ */
+export function documentFileName(type: DocumentType, docNumber: string) {
+  return `${DOCUMENT_PDF_TITLE[type].replaceAll("/", "-")} - ${docNumber}`;
+}
+
 export const DOCUMENT_TYPE_ORDER: DocumentType[] = ["QUOTATION", "INVOICE", "RECEIPT"];
 
 export const DOCUMENT_STATUS_LABEL: Record<DocumentStatus, string> = {
