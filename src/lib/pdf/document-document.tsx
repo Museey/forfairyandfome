@@ -2,7 +2,7 @@ import path from "path";
 import { Document, Page, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { SafeText as Text } from "@/lib/pdf/safe-text";
 import type { DocumentType } from "@/generated/prisma/enums";
-import { DOCUMENT_TYPE_LABEL, VAT_PERCENT, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
+import { DOCUMENT_PDF_TITLE, VAT_PERCENT, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
 
 // Fome signs every outgoing document by default — a real signature can
 // still be added later if the client needs one from someone else.
@@ -211,11 +211,11 @@ export function DocumentPdf({
   const totals = computeTotals(lineItems, withholdingTaxPercent);
 
   return (
-    <Document title={`${DOCUMENT_TYPE_LABEL[type]} ${docNumber}`}>
+    <Document title={`${DOCUMENT_PDF_TITLE[type]} ${docNumber}`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.titleRow}>
           <View>
-            <Text style={styles.title}>{DOCUMENT_TYPE_LABEL[type]}</Text>
+            <Text style={styles.title}>{DOCUMENT_PDF_TITLE[type]}</Text>
             <Text style={styles.docNumber}>เลขที่ {docNumber}</Text>
           </View>
           <Text style={styles.date}>{formatThaiBuddhistDate(issueDate)}</Text>

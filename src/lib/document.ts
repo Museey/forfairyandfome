@@ -6,6 +6,16 @@ export const DOCUMENT_TYPE_LABEL: Record<DocumentType, string> = {
   RECEIPT: "ใบเสร็จรับเงิน",
 };
 
+/**
+ * The heading printed on the PDF, which isn't always what the app calls the
+ * document: a receipt doubles as the tax invoice, and Thai accounting
+ * expects both named in the header.
+ */
+export const DOCUMENT_PDF_TITLE: Record<DocumentType, string> = {
+  ...DOCUMENT_TYPE_LABEL,
+  RECEIPT: "ใบเสร็จรับเงิน/ใบกำกับภาษี",
+};
+
 export const DOCUMENT_TYPE_ORDER: DocumentType[] = ["QUOTATION", "INVOICE", "RECEIPT"];
 
 export const DOCUMENT_STATUS_LABEL: Record<DocumentStatus, string> = {
