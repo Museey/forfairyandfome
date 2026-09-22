@@ -19,7 +19,7 @@ export default async function DocumentDetailPage({
   if (!doc || doc.jobId !== id) notFound();
 
   const lineItems = parseLineItems(doc.lineItems);
-  const totals = computeTotals(lineItems, doc.withholdingTaxPercent);
+  const totals = computeTotals(lineItems, doc.withholdingTaxPercent, doc.vatEnabled);
 
   return (
     <div className="flex flex-1 flex-col gap-5 pt-2 pb-6">
@@ -45,7 +45,7 @@ export default async function DocumentDetailPage({
         />
         <PdfExportButton
           url={`/api/documents/${doc.id}/pdf`}
-          filename={`${documentFileName(doc.type, doc.docNumber)}.pdf`}
+          filename={`${documentFileName(doc.type, doc.vatEnabled, doc.docNumber)}.pdf`}
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-teal/40 bg-teal-soft px-4 py-3 text-sm font-medium text-teal"
         />
       </div>
@@ -93,10 +93,12 @@ export default async function DocumentDetailPage({
             <span>รวมเป็นเงิน</span>
             <span>{formatBaht(totals.subtotal)}</span>
           </div>
-          <div className="mt-1.5 flex justify-between text-text-muted">
-            <span>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</span>
-            <span>+{formatBaht(totals.vat)}</span>
-          </div>
+          {doc.vatEnabled && (
+            <div className="mt-1.5 flex justify-between text-text-muted">
+              <span>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</span>
+              <span>+{formatBaht(totals.vat)}</span>
+            </div>
+          )}
           <div className="mt-1.5 flex justify-between text-text-muted">
             <span>หัก ณ ที่จ่าย ({doc.withholdingTaxPercent}%)</span>
             <span>-{formatBaht(totals.withholdingTax)}</span>

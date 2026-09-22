@@ -98,6 +98,7 @@ export async function loadDocumentOverview(): Promise<OverviewMonth[]> {
       row.amount = computeTotals(
         parseLineItems(doc.lineItems),
         doc.withholdingTaxPercent,
+        doc.vatEnabled,
       ).net;
     }
   }

@@ -200,6 +200,9 @@ model Document {
 
   lineItems             Json
   withholdingTaxPercent Float          @default(3)
+  // Off when the seller isn't VAT-registered for this job; a receipt then
+  // can't double as a tax invoice either.
+  vatEnabled            Boolean        @default(true)
   status                DocumentStatus @default(DRAFT)
   pdfUrl                String?
 

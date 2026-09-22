@@ -38,6 +38,7 @@ export default async function EditDocumentPage({
           buyerPhone: doc.buyerPhone,
           buyerEmail: doc.buyerEmail,
           withholdingTaxPercent: doc.withholdingTaxPercent,
+          vatEnabled: doc.vatEnabled,
           lineItems: parseLineItems(doc.lineItems),
         }}
       />

@@ -52,6 +52,7 @@ export async function GET(
       },
       lineItems: parseLineItems(doc.lineItems),
       withholdingTaxPercent: doc.withholdingTaxPercent,
+      vatEnabled: doc.vatEnabled,
     }),
   );
 
@@ -59,7 +60,7 @@ export async function GET(
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": pdfContentDisposition(
-        documentFileName(doc.type, doc.docNumber),
+        documentFileName(doc.type, doc.vatEnabled, doc.docNumber),
       ),
     },
   });

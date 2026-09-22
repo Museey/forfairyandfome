@@ -8,20 +8,21 @@ export const DOCUMENT_TYPE_LABEL: Record<DocumentType, string> = {
 
 /**
  * The heading printed on the PDF, which isn't always what the app calls the
- * document: a receipt doubles as the tax invoice, and Thai accounting
- * expects both named in the header.
+ * document: a receipt that charges VAT doubles as the tax invoice, and Thai
+ * accounting expects both named in the header. Without VAT there is no tax
+ * invoice to name.
  */
-export const DOCUMENT_PDF_TITLE: Record<DocumentType, string> = {
-  ...DOCUMENT_TYPE_LABEL,
-  RECEIPT: "ใบเสร็จรับเงิน/ใบกำกับภาษี",
-};
+export function documentPdfTitle(type: DocumentType, vatEnabled: boolean) {
+  if (type === "RECEIPT" && vatEnabled) return "ใบเสร็จรับเงิน/ใบกำกับภาษี";
+  return DOCUMENT_TYPE_LABEL[type];
+}
 
 /**
  * What a saved PDF is called. It follows the printed heading rather than the
  * app's label, minus the slash — no filesystem accepts one in a name.
  */
-export function documentFileName(type: DocumentType, docNumber: string) {
-  return `${DOCUMENT_PDF_TITLE[type].replaceAll("/", "-")} - ${docNumber}`;
+export function documentFileName(type: DocumentType, vatEnabled: boolean, docNumber: string) {
+  return `${documentPdfTitle(type, vatEnabled).replaceAll("/", "-")} - ${docNumber}`;
 }
 
 export const DOCUMENT_TYPE_ORDER: DocumentType[] = ["QUOTATION", "INVOICE", "RECEIPT"];
@@ -60,9 +61,13 @@ export function parseLineItems(value: unknown): LineItem[] {
 
 export const VAT_PERCENT = 7;
 
-export function computeTotals(lineItems: LineItem[], withholdingTaxPercent: number) {
+export function computeTotals(
+  lineItems: LineItem[],
+  withholdingTaxPercent: number,
+  vatEnabled: boolean,
+) {
   const subtotal = lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const vat = Math.round(subtotal * (VAT_PERCENT / 100) * 100) / 100;
+  const vat = vatEnabled ? Math.round(subtotal * (VAT_PERCENT / 100) * 100) / 100 : 0;
   const withholdingTax = Math.round(subtotal * (withholdingTaxPercent / 100) * 100) / 100;
   const net = subtotal + vat - withholdingTax;
   return { subtotal, vat, withholdingTax, net };

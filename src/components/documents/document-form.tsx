@@ -24,6 +24,7 @@ export type ExistingDocument = {
   buyerPhone: string | null;
   buyerEmail: string | null;
   withholdingTaxPercent: number;
+  vatEnabled: boolean;
   lineItems: LineItem[];
 };
 
@@ -44,10 +45,11 @@ export function DocumentForm({
   const [withholdingTaxPercent, setWithholdingTaxPercent] = useState(
     existingDocument?.withholdingTaxPercent ?? 3,
   );
+  const [vatEnabled, setVatEnabled] = useState(existingDocument?.vatEnabled ?? true);
 
   const totals = useMemo(
-    () => computeTotals(items, withholdingTaxPercent),
-    [items, withholdingTaxPercent],
+    () => computeTotals(items, withholdingTaxPercent, vatEnabled),
+    [items, withholdingTaxPercent, vatEnabled],
   );
 
   function updateItem(index: number, field: keyof LineItem, value: string) {
@@ -216,7 +218,18 @@ export function DocumentForm({
         </button>
       </div>
 
-      <div className="border-t border-border pt-4">
+      <label className="flex items-center justify-between gap-3 border-t border-border pt-4">
+        <span className="text-sm text-text-muted">คิดภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</span>
+        <input
+          type="checkbox"
+          name="vatEnabled"
+          checked={vatEnabled}
+          onChange={(e) => setVatEnabled(e.target.checked)}
+          className="h-5 w-5 accent-teal"
+        />
+      </label>
+
+      <div>
         <Label htmlFor="withholdingTaxPercent">หัก ณ ที่จ่าย (%)</Label>
         <Input
           id="withholdingTaxPercent"
@@ -233,10 +246,12 @@ export function DocumentForm({
           <span>รวมเป็นเงิน</span>
           <span>{formatBaht(totals.subtotal)}</span>
         </div>
-        <div className="mt-1.5 flex justify-between text-text-muted">
-          <span>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</span>
-          <span>+{formatBaht(totals.vat)}</span>
-        </div>
+        {vatEnabled && (
+          <div className="mt-1.5 flex justify-between text-text-muted">
+            <span>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</span>
+            <span>+{formatBaht(totals.vat)}</span>
+          </div>
+        )}
         <div className="mt-1.5 flex justify-between text-text-muted">
           <span>หัก ณ ที่จ่าย ({withholdingTaxPercent}%)</span>
           <span>-{formatBaht(totals.withholdingTax)}</span>

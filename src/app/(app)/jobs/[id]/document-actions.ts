@@ -21,6 +21,7 @@ export async function createDocument(formData: FormData) {
   const issueDate = String(formData.get("issueDate") || "");
   const lineItemsRaw = String(formData.get("lineItems") || "[]");
   const withholdingTaxPercent = Number(formData.get("withholdingTaxPercent")) || 0;
+  const vatEnabled = formData.get("vatEnabled") === "on";
 
   const lineItems = parseLineItems(JSON.parse(lineItemsRaw));
   const date = issueDate ? new Date(issueDate) : new Date();
@@ -39,6 +40,7 @@ export async function createDocument(formData: FormData) {
       buyerEmail: optionalField(formData, "buyerEmail"),
       lineItems,
       withholdingTaxPercent,
+      vatEnabled,
     },
   });
 
@@ -54,6 +56,7 @@ export async function updateDocument(formData: FormData) {
   const issueDate = String(formData.get("issueDate") || "");
   const lineItemsRaw = String(formData.get("lineItems") || "[]");
   const withholdingTaxPercent = Number(formData.get("withholdingTaxPercent")) || 0;
+  const vatEnabled = formData.get("vatEnabled") === "on";
 
   const lineItems = parseLineItems(JSON.parse(lineItemsRaw));
   const date = issueDate ? new Date(issueDate) : new Date();
@@ -70,6 +73,7 @@ export async function updateDocument(formData: FormData) {
       buyerEmail: optionalField(formData, "buyerEmail"),
       lineItems,
       withholdingTaxPercent,
+      vatEnabled,
     },
   });
 
@@ -132,6 +136,7 @@ export async function duplicateDocumentAs(
       buyerEmail: source.buyerEmail ? stripNullBytes(source.buyerEmail) : null,
       lineItems: source.lineItems as never,
       withholdingTaxPercent: source.withholdingTaxPercent,
+      vatEnabled: source.vatEnabled,
     },
   });
 

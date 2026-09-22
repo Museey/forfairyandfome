@@ -38,6 +38,7 @@ export function DocumentCard({ doc }: { doc: Document & { job: Job } }) {
   const totals = computeTotals(
     parseLineItems(doc.lineItems),
     doc.withholdingTaxPercent,
+    doc.vatEnabled,
   );
   const title = `${DOCUMENT_TYPE_LABEL[doc.type]} - ${doc.docNumber}`;
 

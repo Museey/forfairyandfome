@@ -2,7 +2,7 @@ import path from "path";
 import { Document, Page, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { SafeText as Text } from "@/lib/pdf/safe-text";
 import type { DocumentType } from "@/generated/prisma/enums";
-import { DOCUMENT_PDF_TITLE, VAT_PERCENT, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
+import { VAT_PERCENT, documentPdfTitle, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
 
 // Fome signs every outgoing document by default — a real signature can
 // still be added later if the client needs one from someone else.
@@ -197,6 +197,7 @@ export type DocumentPdfData = {
   };
   lineItems: LineItem[];
   withholdingTaxPercent: number;
+  vatEnabled: boolean;
 };
 
 export function DocumentPdf({
@@ -207,15 +208,17 @@ export function DocumentPdf({
   buyer,
   lineItems,
   withholdingTaxPercent,
+  vatEnabled,
 }: DocumentPdfData) {
-  const totals = computeTotals(lineItems, withholdingTaxPercent);
+  const totals = computeTotals(lineItems, withholdingTaxPercent, vatEnabled);
+  const title = documentPdfTitle(type, vatEnabled);
 
   return (
-    <Document title={`${DOCUMENT_PDF_TITLE[type]} ${docNumber}`}>
+    <Document title={`${title} ${docNumber}`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.titleRow}>
           <View>
-            <Text style={styles.title}>{DOCUMENT_PDF_TITLE[type]}</Text>
+            <Text style={styles.title}>{title}</Text>
             <Text style={styles.docNumber}>เลขที่ {docNumber}</Text>
           </View>
           <Text style={styles.date}>{formatThaiBuddhistDate(issueDate)}</Text>
@@ -266,10 +269,12 @@ export function DocumentPdf({
             <Text style={styles.totalsLabel}>รวมเป็นเงิน</Text>
             <Text>{formatBaht(totals.subtotal)}</Text>
           </View>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</Text>
-            <Text>+{formatBaht(totals.vat)}</Text>
-          </View>
+          {vatEnabled && (
+            <View style={styles.totalsRow}>
+              <Text style={styles.totalsLabel}>ภาษีมูลค่าเพิ่ม (VAT {VAT_PERCENT}%)</Text>
+              <Text>+{formatBaht(totals.vat)}</Text>
+            </View>
+          )}
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>หัก ณ ที่จ่าย ({withholdingTaxPercent}%)</Text>
             <Text>-{formatBaht(totals.withholdingTax)}</Text>
