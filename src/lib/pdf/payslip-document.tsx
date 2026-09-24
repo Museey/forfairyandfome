@@ -1,5 +1,6 @@
-import { Document, Page, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { SafeText as Text } from "@/lib/pdf/safe-text";
+import { FOME_SIGNATURE_PATH } from "@/lib/pdf/signature";
 import {
   formatBaht,
   formatMonthLabelBuddhist,
@@ -84,6 +85,12 @@ const styles = StyleSheet.create({
   noteTitle: { fontSize: 9.5, fontWeight: "bold", marginTop: 28, marginBottom: 3 },
   note: { fontSize: 9, color: MUTED },
   signatureBlock: { width: 200, alignSelf: "flex-end", marginTop: 48 },
+  signatureImage: {
+    width: 110,
+    height: 25,
+    alignSelf: "center",
+    marginTop: 8,
+  },
   signatureLine: {
     borderTopWidth: 1,
     borderTopColor: MUTED,
@@ -226,7 +233,11 @@ export function PayslipPdf({
         )}
 
         <View style={styles.signatureBlock}>
-          <Text style={styles.signatureLine}>ลายเซ็นผู้จ่ายเงิน</Text>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={FOME_SIGNATURE_PATH} style={styles.signatureImage} />
+          <Text style={[styles.signatureLine, { marginTop: 4 }]}>
+            ลายเซ็นผู้จ่ายเงิน
+          </Text>
         </View>
 
         <Text style={styles.footer}>

@@ -1,12 +1,8 @@
-import path from "path";
 import { Document, Page, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { SafeText as Text } from "@/lib/pdf/safe-text";
+import { FOME_SIGNATURE_PATH } from "@/lib/pdf/signature";
 import type { DocumentType } from "@/generated/prisma/enums";
 import { VAT_PERCENT, documentPdfTitle, computeTotals, formatBaht, formatThaiBuddhistDate, type LineItem } from "@/lib/document";
-
-// Fome signs every outgoing document by default — a real signature can
-// still be added later if the client needs one from someone else.
-const FOME_SIGNATURE_PATH = path.join(process.cwd(), "public/signatures/fome.png");
 
 const INK = "#16213E";
 const MUTED = "#6B7280";

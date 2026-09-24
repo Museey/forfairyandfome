@@ -1,5 +1,6 @@
-import { Document, Page, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { SafeText as Text } from "@/lib/pdf/safe-text";
+import { FOME_SIGNATURE_PATH } from "@/lib/pdf/signature";
 import { formatBaht, formatMonthLabelBuddhist } from "@/lib/document";
 import {
   formatHours,
@@ -84,6 +85,14 @@ const styles = StyleSheet.create({
     marginTop: 48,
   },
   signatureBlock: { width: 200 },
+  signatureImage: {
+    width: 110,
+    height: 25,
+    alignSelf: "center",
+    marginTop: 8,
+  },
+  // Keeps the unsigned line level with the one under Fome's signature.
+  signatureSpacer: { height: 25, marginTop: 8 },
   signatureLine: {
     borderTopWidth: 1,
     borderTopColor: MUTED,
@@ -184,10 +193,15 @@ export function TimesheetPdf({
 
         <View style={styles.signaturesRow}>
           <View style={styles.signatureBlock}>
-            <Text style={styles.signatureLine}>ผู้จัดทำ</Text>
+            <View style={styles.signatureSpacer} />
+            <Text style={[styles.signatureLine, { marginTop: 4 }]}>ผู้จัดทำ</Text>
           </View>
           <View style={styles.signatureBlock}>
-            <Text style={styles.signatureLine}>ผู้อนุมัติ</Text>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <Image src={FOME_SIGNATURE_PATH} style={styles.signatureImage} />
+            <Text style={[styles.signatureLine, { marginTop: 4 }]}>
+              ผู้อนุมัติ
+            </Text>
           </View>
         </View>
       </Page>
