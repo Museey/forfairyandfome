@@ -62,7 +62,9 @@ function MonthTable({ month }: { month: OverviewMonth }) {
                   <Link href={`/jobs/${row.jobId}?tab=documents`} className="block">
                     <span className="block max-w-[9rem] truncate">{row.brandName}</span>
                     <span className="block max-w-[9rem] truncate text-xs text-text-faint">
-                      {row.jobTitle}
+                      {row.jobMonthlySeq
+                        ? `Job ${row.jobMonthlySeq} · ${row.jobTitle}`
+                        : row.jobTitle}
                     </span>
                   </Link>
                 </td>

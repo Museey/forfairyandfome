@@ -11,6 +11,8 @@ export type OverviewColumn = DocumentType | "WHT";
 export type OverviewRow = {
   jobId: string;
   jobTitle: string;
+  /** The job's number within the month it was created, if it has one. */
+  jobMonthlySeq: number | null;
   brandName: string;
   /** Net of the quotation for this month, else the invoice, else the receipt. */
   amount: number;
@@ -28,7 +30,7 @@ const AMOUNT_PRIORITY: DocumentType[] = ["QUOTATION", "INVOICE", "RECEIPT"];
 
 /**
  * The month-by-month table on the เอกสารทั้งหมด tab: one row per job that had
- * a document issued that month, one tick per document type.
+ * a document issued that month, oldest job first, one tick per document type.
  *
  * WHT is only ever an uploaded scan, so it has no unsigned state — a job
  * either has one on file or it doesn't, and it counts for every month that
@@ -50,8 +52,12 @@ export async function loadDocumentOverview(): Promise<OverviewMonth[]> {
 
   // `amountRank` tracks which document the row's amount came from, so a
   // quotation can still replace an invoice's figure whatever order they
-  // come back in. It's dropped again on the way out.
-  type AccumulatingRow = OverviewRow & { amountRank: number };
+  // come back in. `jobCreatedAt` orders the rows. Both are dropped again on
+  // the way out.
+  type AccumulatingRow = OverviewRow & {
+    amountRank: number;
+    jobCreatedAt: Date;
+  };
   const months = new Map<
     number,
     { year: number; month: number; rows: AccumulatingRow[] }
@@ -72,9 +78,11 @@ export async function loadDocumentOverview(): Promise<OverviewMonth[]> {
       row = {
         jobId: doc.jobId,
         jobTitle: doc.job.title,
+        jobMonthlySeq: doc.job.monthlySeq,
         brandName: doc.job.brandName,
         amount: 0,
         amountRank: Number.POSITIVE_INFINITY,
+        jobCreatedAt: doc.job.createdAt,
         cells: {
           QUOTATION: "NONE",
           INVOICE: "NONE",
@@ -108,12 +116,17 @@ export async function loadDocumentOverview(): Promise<OverviewMonth[]> {
     .map(({ year, month, rows }) => ({
       year,
       month,
-      rows: rows.map(({ jobId, jobTitle, brandName, amount, cells }) => ({
-        jobId,
-        jobTitle,
-        brandName,
-        amount,
-        cells,
-      })),
+      // Jobs in the order they were created — the same order as their
+      // monthly number, so งานที่ 1 heads the table.
+      rows: rows
+        .sort((a, b) => a.jobCreatedAt.getTime() - b.jobCreatedAt.getTime())
+        .map(({ jobId, jobTitle, jobMonthlySeq, brandName, amount, cells }) => ({
+          jobId,
+          jobTitle,
+          jobMonthlySeq,
+          brandName,
+          amount,
+          cells,
+        })),
     }));
 }
