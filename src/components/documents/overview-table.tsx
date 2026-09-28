@@ -69,7 +69,11 @@ function MonthTable({ month }: { month: OverviewMonth }) {
                   </Link>
                 </td>
                 <td className="border-b border-border px-3 py-2.5 text-right whitespace-nowrap">
-                  {formatBaht(row.amount)}
+                  {row.amount === null ? (
+                    <span className="text-text-faint">–</span>
+                  ) : (
+                    formatBaht(row.amount)
+                  )}
                 </td>
                 {COLUMNS.map((column) => (
                   <td
@@ -90,7 +94,7 @@ function MonthTable({ month }: { month: OverviewMonth }) {
 
 export function OverviewTables({ months }: { months: OverviewMonth[] }) {
   if (months.length === 0) {
-    return <p className="py-8 text-center text-sm text-text-faint">ยังไม่มีเอกสารในระบบ</p>;
+    return <p className="py-8 text-center text-sm text-text-faint">ยังไม่มีงานในระบบ</p>;
   }
 
   return (
