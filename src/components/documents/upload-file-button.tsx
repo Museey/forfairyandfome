@@ -17,12 +17,14 @@ export function UploadFileButton({
   label,
   className,
   accept = "application/pdf,image/*",
+  disabled = false,
 }: {
   action: (formData: FormData) => Promise<void>;
   fields: Record<string, string>;
   label: string;
   className?: string;
   accept?: string;
+  disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -56,7 +58,7 @@ export function UploadFileButton({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        disabled={pending}
+        disabled={pending || disabled}
         className={cn(
           "inline-flex items-center justify-center gap-1.5 disabled:opacity-60",
           className,

@@ -10,9 +10,13 @@ import { seedTimesheetRows } from "@/lib/timesheet-seed";
 import { nextDocNumber } from "@/lib/doc-number";
 import { assertJobTakesDocuments } from "@/lib/job-kind";
 import { deleteFile, uploadFile } from "@/lib/storage";
-import { TAX_DOC_PERIOD } from "@/lib/tax-document";
+import { TAX_DOC_PERIOD, taxDocParts } from "@/lib/tax-document";
 import { bangkokYearMonth } from "@/lib/timezone";
-import type { DocumentStatus, TaxDocType } from "@/generated/prisma/enums";
+import type {
+  DocumentStatus,
+  TaxDocPart,
+  TaxDocType,
+} from "@/generated/prisma/enums";
 
 function text(formData: FormData, key: string) {
   return stripNullBytes(String(formData.get(key) || "")).trim();
@@ -181,9 +185,10 @@ export async function deleteTimesheet(formData: FormData) {
 // ----------------------------------------------------------- tax document
 
 /**
- * Files a scan of one of the four tax forms. What identifies the filing
- * depends on the form: WHT hangs off a job, ภ.พ.30 and ภาษีซื้อ-ขาย off a
- * month, ภ.ง.ด.90 off a year.
+ * Files a scan of one of the tax forms. What identifies the filing depends
+ * on the form: WHT hangs off a job, the monthly ones off a month, ภ.ง.ด.90
+ * off a year. ภ.พ.30 and ภ.ง.ด.1 also say which half — form or receipt —
+ * and take one file of each per month.
  */
 export async function uploadTaxDocument(formData: FormData) {
   const user = await requireCurrentUser();
@@ -214,6 +219,16 @@ export async function uploadTaxDocument(formData: FormData) {
     periodMonth = now.month;
   }
 
+  const parts = taxDocParts(type);
+  const part = parts.length > 0 ? (text(formData, "part") as TaxDocPart) : null;
+  if (part !== null && !parts.includes(part)) return;
+  if (part) {
+    const taken = await prisma.taxDocument.count({
+      where: { type, periodYear, periodMonth, part },
+    });
+    if (taken > 0) throw new Error("เดือนนี้แนบเอกสารนี้ไว้แล้ว");
+  }
+
   const url = await uploadFile(file, `tax/${type.toLowerCase()}`);
   await prisma.taxDocument.create({
     data: {
@@ -221,6 +236,7 @@ export async function uploadTaxDocument(formData: FormData) {
       jobId,
       periodYear,
       periodMonth,
+      part,
       fileUrl: url,
       note: optional(formData, "note"),
       uploadedById: user.id,

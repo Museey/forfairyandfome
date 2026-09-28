@@ -352,15 +352,24 @@ model Timesheet {
 
 enum TaxDocType {
   WHT // หัก ณ ที่จ่าย — per job
-  PP30 // ภ.พ.30 — per month
+  PP30 // ภ.พ.30 — per month, form + receipt
+  PND1 // ภ.ง.ด.1 — per month, form + receipt
   PURCHASE_SALES_TAX // ภาษีซื้อ/ขาย — per month
   PND90 // ภ.ง.ด.90 — per year
 }
 
-// The four tax forms we only ever file away: no fields to key in, just a
-// scan. They differ only in what period they cover, so one table holds all
-// four — periodMonth is null for the yearly ภ.ง.ด.90, and jobId is set only
-// for WHT, which is filed against a job.
+// Which half of a filing that comes in two: the form itself, and the
+// receipt the Revenue Department issues once it's paid.
+enum TaxDocPart {
+  FORM
+  RECEIPT
+}
+
+// The tax forms we only ever file away: no fields to key in, just a scan.
+// They differ only in what period they cover, so one table holds them all —
+// periodMonth is null for the yearly ภ.ง.ด.90, and jobId is set only for
+// WHT, which is filed against a job. part is set only for the types filed
+// as a form plus its receipt (ภ.พ.30, ภ.ง.ด.1): one of each per month.
 model TaxDocument {
   id   String     @id @default(cuid())
   type TaxDocType
@@ -370,6 +379,7 @@ model TaxDocument {
 
   periodYear  Int
   periodMonth Int?
+  part        TaxDocPart?
 
   fileUrl      String
   note         String?

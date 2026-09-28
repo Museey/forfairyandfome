@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { periodMatches } from "@/lib/document-search";
-import { Prisma } from "@/generated/prisma/client";
+import { monthKey } from "@/lib/document";
+import { Prisma, type TaxDocument } from "@/generated/prisma/client";
 import type { DocumentType, TaxDocType } from "@/generated/prisma/enums";
 
 /** Rows per page on every list tab of the documents menu. */
@@ -96,13 +97,12 @@ export async function loadTimesheetPage(query: string, page: number) {
   return pageOf(items, total);
 }
 
-export async function loadTaxDocumentPage(
+function taxDocumentFilter(
   type: TaxDocType,
   query: string,
-  page: number,
-) {
+): Prisma.TaxDocumentWhereInput {
   const contains = { contains: query, mode: "insensitive" } as const;
-  const where: Prisma.TaxDocumentWhereInput = {
+  return {
     type,
     ...(query
       ? {
@@ -115,7 +115,14 @@ export async function loadTaxDocumentPage(
         }
       : {}),
   };
+}
 
+export async function loadTaxDocumentPage(
+  type: TaxDocType,
+  query: string,
+  page: number,
+) {
+  const where = taxDocumentFilter(type, query);
   const [items, total] = await Promise.all([
     prisma.taxDocument.findMany({
       where,
@@ -130,4 +137,61 @@ export async function loadTaxDocumentPage(
     prisma.taxDocument.count({ where }),
   ]);
   return pageOf(items, total);
+}
+
+export type TaxFilingMonth = {
+  year: number;
+  month: number;
+  documents: TaxDocument[];
+};
+
+/**
+ * A form-plus-receipt type (ภ.พ.30, ภ.ง.ด.1), one entry per month, newest
+ * first and paged by month so a month's two files never split across
+ * pages. Without a search, `current` is always listed so this month's
+ * empty slots are ready to fill. `filled` names every slot that already
+ * has a file, on any page.
+ */
+export async function loadTaxFilingMonths(
+  type: TaxDocType,
+  query: string,
+  page: number,
+  current: { year: number; month: number },
+): Promise<Page<TaxFilingMonth> & { filled: string[] }> {
+  const documents = await prisma.taxDocument.findMany({
+    where: taxDocumentFilter(type, query),
+    orderBy: { createdAt: "asc" },
+  });
+
+  const months = new Map<number, TaxFilingMonth>();
+  const monthFor = (year: number, month: number) => {
+    const key = monthKey(year, month);
+    let entry = months.get(key);
+    if (!entry) {
+      entry = { year, month, documents: [] };
+      months.set(key, entry);
+    }
+    return entry;
+  };
+
+  if (!query) monthFor(current.year, current.month);
+  for (const doc of documents) {
+    monthFor(doc.periodYear, doc.periodMonth ?? 1).documents.push(doc);
+  }
+
+  const sorted = [...months.values()].sort(
+    (a, b) => monthKey(b.year, b.month) - monthKey(a.year, a.month),
+  );
+  const { skip, take } = paging(page);
+  return {
+    ...pageOf(sorted.slice(skip, skip + take), sorted.length),
+    filled: documents.map((d) =>
+      filledSlotKey(d.periodYear, d.periodMonth ?? 1, d.part ?? "FORM"),
+    ),
+  };
+}
+
+/** "2026-09:FORM" — one half of one month's filing. */
+function filledSlotKey(year: number, month: number, part: string) {
+  return `${year}-${String(month).padStart(2, "0")}:${part}`;
 }

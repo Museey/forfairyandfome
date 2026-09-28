@@ -10,10 +10,13 @@ import { TimesheetCard } from "@/components/documents/timesheet-card";
 import { TaxDocumentList } from "@/components/documents/tax-document-list";
 import { TaxDocumentUploader } from "@/components/documents/tax-document-uploader";
 import { loadDocumentOverview } from "@/lib/documents-overview";
+import { TaxFilingMonths } from "@/components/documents/tax-filing-months";
+import { taxDocPartLabel, taxDocParts } from "@/lib/tax-document";
 import {
   loadDocumentPage,
   loadPayslipPage,
   loadTaxDocumentPage,
+  loadTaxFilingMonths,
   loadTimesheetPage,
 } from "@/lib/documents-list";
 import { bangkokYearMonth } from "@/lib/timezone";
@@ -28,6 +31,7 @@ const TABS = [
   { key: "timesheets", label: "Time sheet" },
   { key: "wht", label: "WHT" },
   { key: "pp30", label: "ภ.พ.30" },
+  { key: "pnd1", label: "ภ.ง.ด.1" },
   { key: "purchase-sales", label: "ภาษีซื้อ/ขาย" },
   { key: "pnd90", label: "ภ.ง.ด.90" },
 ] as const;
@@ -43,6 +47,7 @@ const DOCUMENT_TAB: Partial<Record<TabKey, DocumentType>> = {
 const TAX_TAB: Partial<Record<TabKey, TaxDocType>> = {
   wht: "WHT",
   pp30: "PP30",
+  pnd1: "PND1",
   "purchase-sales": "PURCHASE_SALES_TAX",
   pnd90: "PND90",
 };
@@ -56,6 +61,7 @@ const SEARCH_PLACEHOLDER: Partial<Record<TabKey, string>> = {
   timesheets: "ค้นหาเดือน ปี ชื่อพนักงาน หรือเลขที่",
   wht: "ค้นหาแบรนด์ ชื่องาน หรือหมายเหตุ",
   pp30: "ค้นหาเดือน ปี หรือหมายเหตุ",
+  pnd1: "ค้นหาเดือน ปี หรือหมายเหตุ",
   "purchase-sales": "ค้นหาเดือน ปี หรือหมายเหตุ",
   pnd90: "ค้นหาปี หรือหมายเหตุ",
 };
@@ -94,15 +100,24 @@ export default async function DocumentsPage({
   const payslips = tab === "payslips" ? await loadPayslipPage(query, page) : null;
   const timesheets =
     tab === "timesheets" ? await loadTimesheetPage(query, page) : null;
-  const taxDocuments = taxType
-    ? await loadTaxDocumentPage(taxType, query, page)
-    : null;
+  // ภ.พ.30 and ภ.ง.ด.1 come as a form plus its receipt, so they list by
+  // month; the other tax types list file by file.
+  const filingParts = taxType ? taxDocParts(taxType) : [];
+  const taxFilings =
+    taxType && filingParts.length > 0
+      ? await loadTaxFilingMonths(taxType, query, page, now)
+      : null;
+  const taxDocuments =
+    taxType && filingParts.length === 0
+      ? await loadTaxDocumentPage(taxType, query, page)
+      : null;
 
   const totalPages =
     documents?.totalPages ??
     payslips?.totalPages ??
     timesheets?.totalPages ??
     taxDocuments?.totalPages ??
+    taxFilings?.totalPages ??
     0;
 
   function hrefFor(n: number) {
@@ -161,6 +176,27 @@ export default async function DocumentsPage({
               timesheets.items.map((timesheet) => (
                 <TimesheetCard key={timesheet.id} timesheet={timesheet} />
               ))
+            )}
+          </>
+        )}
+
+        {taxFilings && taxType && (
+          <>
+            <TaxDocumentUploader
+              type={taxType}
+              scope="MONTH"
+              defaultPeriod={`${now.year}-${String(now.month).padStart(2, "0")}`}
+              defaultYear={now.year}
+              parts={filingParts.map((part) => ({
+                part,
+                label: taxDocPartLabel(taxType, part),
+              }))}
+              filled={taxFilings.filled}
+            />
+            {taxFilings.items.length === 0 && query ? (
+              <Empty>{notFound}</Empty>
+            ) : (
+              <TaxFilingMonths type={taxType} months={taxFilings.items} />
             )}
           </>
         )}
