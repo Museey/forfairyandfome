@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { createJob } from "@/app/(app)/jobs/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
+import { JobKindPicker } from "@/components/job-kind-picker";
 import { formatJobMonth, nextJobMonthlySeq } from "@/lib/job-number";
 
 export default async function NewJobPage() {
@@ -27,6 +28,10 @@ export default async function NewJobPage() {
       </div>
 
       <form action={createJob} className="flex flex-col gap-4">
+        <div>
+          <Label>ประเภทงาน</Label>
+          <JobKindPicker />
+        </div>
         <div>
           <Label htmlFor="title">ชื่องาน</Label>
           <Input

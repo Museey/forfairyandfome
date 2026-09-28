@@ -25,6 +25,12 @@ enum JobStatus {
   PAID
 }
 
+/// A FREE job earns nothing, so it never gets documents or reaches PAID.
+enum JobKind {
+  STANDARD
+  FREE
+}
+
 enum BriefItemType {
   TEXT
   PHOTO
@@ -93,6 +99,7 @@ model Job {
   brandName   String
   productName String?
   status      JobStatus @default(NEW)
+  kind        JobKind   @default(STANDARD)
 
   /// 1 for the first job created in a Bangkok calendar month, 2 for the next…
   /// Null only if the column was added without running the backfill.

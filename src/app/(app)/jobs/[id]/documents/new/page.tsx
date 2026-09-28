@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import { ChevronLeft } from "lucide-react";
 import { DocumentForm } from "@/components/documents/document-form";
 
@@ -6,6 +8,12 @@ export default async function NewDocumentPage({
   params,
 }: PageProps<"/jobs/[id]/documents/new">) {
   const { id } = await params;
+  const job = await prisma.job.findUnique({
+    where: { id },
+    select: { kind: true },
+  });
+  if (!job) notFound();
+  if (job.kind === "FREE") redirect(`/jobs/${id}`);
 
   return (
     <div className="flex flex-1 flex-col gap-6 pt-2 pb-6">

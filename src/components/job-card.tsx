@@ -4,6 +4,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { formatDateShort } from "@/lib/date";
 import { nextMilestone } from "@/lib/job-dates";
 import { formatJobMonth } from "@/lib/job-number";
+import { FreeJobTag } from "@/components/job-kind-picker";
 
 export function JobCard({ job }: { job: Job }) {
   const milestone = nextMilestone(job);
@@ -23,7 +24,10 @@ export function JobCard({ job }: { job: Job }) {
             {job.title}
           </h3>
         </div>
-        <StatusPill status={job.status} className="shrink-0" />
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <StatusPill status={job.status} />
+          {job.kind === "FREE" && <FreeJobTag />}
+        </div>
       </div>
       {(milestone || job.monthlySeq) && (
         <p className="mt-3 text-xs text-text-faint">

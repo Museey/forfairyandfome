@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { JOB_STATUS_LABEL } from "@/lib/job-status";
 import { nextJobMonthlySeq } from "@/lib/job-number";
+import { jobStatusesFor, parseJobKind } from "@/lib/job-kind";
 import { notifyOtherUsers, notifyUsersByRole } from "@/lib/push";
 import { deleteFile } from "@/lib/storage";
 import type { JobStatus } from "@/generated/prisma/enums";
@@ -15,6 +16,7 @@ export async function createJob(formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const brandName = String(formData.get("brandName") || "").trim();
   const productName = String(formData.get("productName") || "").trim();
+  const kind = parseJobKind(formData.get("kind"));
 
   if (!title || !brandName) {
     throw new Error("กรุณากรอกชื่องานและแบรนด์");
@@ -28,6 +30,7 @@ export async function createJob(formData: FormData) {
       title,
       brandName,
       productName: productName || null,
+      kind,
       createdById: user.id,
     },
   });
@@ -46,6 +49,9 @@ export async function updateJobStatus(jobId: string, status: JobStatus) {
   const user = await requireCurrentUser();
   const job = await prisma.job.findUnique({ where: { id: jobId } });
   if (!job) throw new Error("ไม่พบงานนี้");
+  if (!jobStatusesFor(job.kind).includes(status)) {
+    throw new Error("งานฟรีไม่มีสถานะได้รับเงิน");
+  }
 
   await prisma.job.update({ where: { id: jobId }, data: { status } });
 
@@ -102,11 +108,30 @@ export async function updateJobInfo(formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const brandName = String(formData.get("brandName") || "").trim();
   const productName = String(formData.get("productName") || "").trim();
+  const kind = parseJobKind(formData.get("kind"));
   if (!jobId || !title || !brandName) throw new Error("missing fields");
+
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: { _count: { select: { documents: true, taxDocuments: true } } },
+  });
+  if (!job) throw new Error("ไม่พบงานนี้");
+
+  const becomingFree = kind === "FREE" && job.kind !== "FREE";
+  if (becomingFree && job._count.documents + job._count.taxDocuments > 0) {
+    throw new Error("งานนี้มีเอกสารอยู่แล้ว ลบเอกสารก่อนเปลี่ยนเป็นงานฟรี");
+  }
 
   await prisma.job.update({
     where: { id: jobId },
-    data: { title, brandName, productName: productName || null },
+    data: {
+      title,
+      brandName,
+      productName: productName || null,
+      kind,
+      // A free job can't be paid, so it steps back to its last real status.
+      ...(becomingFree && job.status === "PAID" ? { status: "POSTED" } : {}),
+    },
   });
 
   revalidatePath(`/jobs/${jobId}`);

@@ -37,6 +37,8 @@ import { DeleteJobButton } from "@/components/delete-job-button";
 import { PdfExportButton } from "@/components/pdf-export-button";
 import { PdfPreviewButton } from "@/components/pdf-preview-button";
 import { formatJobMonth } from "@/lib/job-number";
+import { jobStatusesFor } from "@/lib/job-kind";
+import { FreeJobTag, JobKindPicker } from "@/components/job-kind-picker";
 
 const TABS = [
   { key: "timeline", label: "ไทม์ไลน์" },
@@ -52,10 +54,14 @@ export default async function JobDetailPage({
 }: PageProps<"/jobs/[id]">) {
   const { id } = await params;
   const sp = await searchParams;
-  const tab = typeof sp.tab === "string" ? sp.tab : "timeline";
-
   const job = await prisma.job.findUnique({ where: { id } });
   if (!job) notFound();
+
+  // A free job never gets documents, so it has no เอกสาร tab.
+  const tabs =
+    job.kind === "FREE" ? TABS.filter((t) => t.key !== "documents") : TABS;
+  const requested = typeof sp.tab === "string" ? sp.tab : "";
+  const tab = tabs.some((t) => t.key === requested) ? requested : "timeline";
 
   const [briefItems, timelinePosts] =
     tab === "timeline"
@@ -109,6 +115,14 @@ export default async function JobDetailPage({
           orderBy: { createdAt: "desc" },
         })
       : [];
+
+  // Only a job without documents can be switched to งานฟรี.
+  const hasDocuments =
+    tab === "info" && job.kind !== "FREE"
+      ? (await prisma.document.count({ where: { jobId: id } })) +
+          (await prisma.taxDocument.count({ where: { jobId: id } })) >
+        0
+      : false;
 
   const briefFeed = groupFeedRows(
     briefItems.map((b) => ({
@@ -174,10 +188,13 @@ export default async function JobDetailPage({
             </p>
           )}
         </div>
-        <StatusPill status={job.status} className="mt-1 shrink-0" />
+        <div className="mt-1 flex shrink-0 flex-col items-end gap-1.5">
+          <StatusPill status={job.status} />
+          {job.kind === "FREE" && <FreeJobTag />}
+        </div>
       </div>
 
-      <TabBar basePath={`/jobs/${job.id}`} active={tab} tabs={TABS} />
+      <TabBar basePath={`/jobs/${job.id}`} active={tab} tabs={tabs} />
 
       {tab === "timeline" && (
         <div className="flex flex-col gap-6 pb-6">
@@ -506,7 +523,11 @@ export default async function JobDetailPage({
             <h2 className="mb-2 text-sm font-medium text-text-muted">
               สถานะงาน
             </h2>
-            <StatusSelect jobId={job.id} status={job.status} />
+            <StatusSelect
+              jobId={job.id}
+              status={job.status}
+              statuses={jobStatusesFor(job.kind)}
+            />
           </section>
 
           <section>
@@ -543,6 +564,15 @@ export default async function JobDetailPage({
               className="flex flex-col gap-3 rounded-card border border-border bg-card p-4"
             >
               <input type="hidden" name="jobId" value={job.id} />
+              <div>
+                <Label>ประเภทงาน</Label>
+                <JobKindPicker
+                  defaultValue={job.kind}
+                  freeDisabledReason={
+                    hasDocuments ? "มีเอกสารแล้ว ลบเอกสารก่อน" : undefined
+                  }
+                />
+              </div>
               <div>
                 <Label htmlFor="edit-title">ชื่องาน</Label>
                 <Input id="edit-title" name="title" defaultValue={job.title} required />

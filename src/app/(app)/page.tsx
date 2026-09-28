@@ -13,10 +13,10 @@ import {
 } from "@/app/(app)/board-actions";
 import { requireCurrentUser } from "@/lib/auth";
 import { canPostToTopic } from "@/lib/board";
-import { JOB_STATUS_ORDER } from "@/lib/job-status";
 import { dateKey } from "@/lib/calendar-grid";
 import { buildEventsByDay } from "@/lib/calendar-events";
 import { bangkokDayRange } from "@/lib/timezone";
+import { isJobActive } from "@/lib/job-kind";
 import type { BoardTopic } from "@/generated/prisma/enums";
 
 type BoardRow = {
@@ -56,7 +56,7 @@ export default async function TodayPage() {
     users,
     boardPosts,
   ] = await Promise.all([
-    prisma.job.groupBy({ by: ["status"], _count: true }),
+    prisma.job.groupBy({ by: ["status", "kind"], _count: true }),
     prisma.job.findMany({
       select: {
         id: true,
@@ -94,11 +94,9 @@ export default async function TodayPage() {
     : [];
   const lastManagerEvent = managerTodayEvents.at(-1) ?? null;
 
-  const countMap = new Map(statusCounts.map((s) => [s.status, s._count]));
-  const activeCount = JOB_STATUS_ORDER.filter((s) => s !== "PAID").reduce(
-    (sum, s) => sum + (countMap.get(s) ?? 0),
-    0,
-  );
+  const activeCount = statusCounts
+    .filter((s) => isJobActive(s.kind, s.status))
+    .reduce((sum, s) => sum + s._count, 0);
 
   const jobCheckEvents = todayJobCheckEvents.filter(
     (e): e is typeof e & { jobId: string; job: NonNullable<typeof e.job> } =>

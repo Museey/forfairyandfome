@@ -8,6 +8,7 @@ import { parseLineItems, stripNullBytes } from "@/lib/document";
 import { parseTimesheetRows } from "@/lib/payroll";
 import { seedTimesheetRows } from "@/lib/timesheet-seed";
 import { nextDocNumber } from "@/lib/doc-number";
+import { assertJobTakesDocuments } from "@/lib/job-kind";
 import { deleteFile, uploadFile } from "@/lib/storage";
 import { TAX_DOC_PERIOD } from "@/lib/tax-document";
 import { bangkokYearMonth } from "@/lib/timezone";
@@ -193,6 +194,7 @@ export async function uploadTaxDocument(formData: FormData) {
   const scope = TAX_DOC_PERIOD[type];
   const jobId = scope === "JOB" ? optional(formData, "jobId") : null;
   if (scope === "JOB" && !jobId) return;
+  if (jobId) await assertJobTakesDocuments(jobId);
 
   let periodYear: number;
   let periodMonth: number | null = null;

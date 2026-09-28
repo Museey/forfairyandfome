@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { DOCUMENT_TYPE_LABEL, parseLineItems, stripNullBytes } from "@/lib/document";
 import { nextDocNumber } from "@/lib/doc-number";
+import { assertJobTakesDocuments } from "@/lib/job-kind";
 import { notifyOtherUsers } from "@/lib/push";
 import { deleteFile, uploadFile } from "@/lib/storage";
 import type { DocumentType, DocumentStatus } from "@/generated/prisma/enums";
@@ -22,6 +23,7 @@ export async function createDocument(formData: FormData) {
   const lineItemsRaw = String(formData.get("lineItems") || "[]");
   const withholdingTaxPercent = Number(formData.get("withholdingTaxPercent")) || 0;
   const vatEnabled = formData.get("vatEnabled") === "on";
+  await assertJobTakesDocuments(jobId);
 
   const lineItems = parseLineItems(JSON.parse(lineItemsRaw));
   const date = issueDate ? new Date(issueDate) : new Date();
