@@ -14,7 +14,7 @@ export type OverviewRow = {
   /** The job's number within the month it was created, if it has one. */
   jobMonthlySeq: number | null;
   brandName: string;
-  /** Net of the quotation for this month, else the invoice, else the receipt. */
+  /** Net of the job's quotation, else its invoice, else its receipt. */
   amount: number;
   cells: Record<OverviewColumn, DocCellState>;
 };
@@ -29,12 +29,13 @@ export type OverviewMonth = {
 const AMOUNT_PRIORITY: DocumentType[] = ["QUOTATION", "INVOICE", "RECEIPT"];
 
 /**
- * The month-by-month table on the เอกสารทั้งหมด tab: one row per job that had
- * a document issued that month, oldest job first, one tick per document type.
+ * The month-by-month table on the เอกสารทั้งหมด tab: one row per job that
+ * has any document, under the month the job was created — the same month
+ * its Job number counts in — oldest job first. Each tick covers all of that
+ * job's documents of that type, whenever they were issued.
  *
  * WHT is only ever an uploaded scan, so it has no unsigned state — a job
- * either has one on file or it doesn't, and it counts for every month that
- * job appears in.
+ * either has one on file or it doesn't.
  */
 export async function loadDocumentOverview(): Promise<OverviewMonth[]> {
   const [documents, whtDocs] = await Promise.all([
@@ -64,7 +65,7 @@ export async function loadDocumentOverview(): Promise<OverviewMonth[]> {
   >();
 
   for (const doc of documents) {
-    const { year, month } = bangkokYearMonth(doc.issueDate);
+    const { year, month } = bangkokYearMonth(doc.job.createdAt);
     const key = monthKey(year, month);
 
     let bucket = months.get(key);
