@@ -3,6 +3,7 @@ import type { Job } from "@/generated/prisma/client";
 import { StatusPill } from "@/components/ui/status-pill";
 import { formatDateShort } from "@/lib/date";
 import { nextMilestone } from "@/lib/job-dates";
+import { formatJobMonth } from "@/lib/job-number";
 
 export function JobCard({ job }: { job: Job }) {
   const milestone = nextMilestone(job);
@@ -24,9 +25,13 @@ export function JobCard({ job }: { job: Job }) {
         </div>
         <StatusPill status={job.status} className="shrink-0" />
       </div>
-      {milestone && (
+      {(milestone || job.monthlySeq) && (
         <p className="mt-3 text-xs text-text-faint">
-          {milestone.label} · {formatDateShort(milestone.date)}
+          {job.monthlySeq &&
+            `งานที่ ${job.monthlySeq} · ${formatJobMonth(job.createdAt)}`}
+          {job.monthlySeq && milestone && " — "}
+          {milestone &&
+            `${milestone.label} · ${formatDateShort(milestone.date)}`}
         </p>
       )}
     </Link>

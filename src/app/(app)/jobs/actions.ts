@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { JOB_STATUS_LABEL } from "@/lib/job-status";
+import { nextJobMonthlySeq } from "@/lib/job-number";
 import { notifyOtherUsers, notifyUsersByRole } from "@/lib/push";
 import { deleteFile } from "@/lib/storage";
 import type { JobStatus } from "@/generated/prisma/enums";
@@ -19,8 +20,11 @@ export async function createJob(formData: FormData) {
     throw new Error("กรุณากรอกชื่องานและแบรนด์");
   }
 
+  const createdAt = new Date();
   const job = await prisma.job.create({
     data: {
+      createdAt,
+      monthlySeq: await nextJobMonthlySeq(createdAt),
       title,
       brandName,
       productName: productName || null,

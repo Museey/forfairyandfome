@@ -3,8 +3,12 @@ import { ChevronLeft } from "lucide-react";
 import { createJob } from "@/app/(app)/jobs/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
+import { formatJobMonth, nextJobMonthlySeq } from "@/lib/job-number";
 
-export default function NewJobPage() {
+export default async function NewJobPage() {
+  const now = new Date();
+  const monthlySeq = await nextJobMonthlySeq(now);
+
   return (
     <div className="flex flex-1 flex-col gap-6 pt-2">
       <Link
@@ -15,7 +19,12 @@ export default function NewJobPage() {
         กลับ
       </Link>
 
-      <h1 className="text-xl font-semibold">งานใหม่</h1>
+      <div>
+        <h1 className="text-xl font-semibold">งานใหม่</h1>
+        <p className="mt-1 text-sm text-text-muted">
+          งานที่ {monthlySeq} ของเดือน {formatJobMonth(now)}
+        </p>
+      </div>
 
       <form action={createJob} className="flex flex-col gap-4">
         <div>

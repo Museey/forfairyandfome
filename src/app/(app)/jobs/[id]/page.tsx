@@ -36,6 +36,7 @@ import { Textarea } from "@/components/ui/field";
 import { DeleteJobButton } from "@/components/delete-job-button";
 import { PdfExportButton } from "@/components/pdf-export-button";
 import { PdfPreviewButton } from "@/components/pdf-preview-button";
+import { formatJobMonth } from "@/lib/job-number";
 
 const TABS = [
   { key: "timeline", label: "ไทม์ไลน์" },
@@ -167,6 +168,11 @@ export default async function JobDetailPage({
           <h1 className="mt-0.5 truncate text-xl font-semibold">
             {job.title}
           </h1>
+          {job.monthlySeq && (
+            <p className="mt-1 text-xs text-text-faint">
+              งานที่ {job.monthlySeq} ของเดือน {formatJobMonth(job.createdAt)}
+            </p>
+          )}
         </div>
         <StatusPill status={job.status} className="mt-1 shrink-0" />
       </div>

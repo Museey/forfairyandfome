@@ -94,6 +94,10 @@ model Job {
   productName String?
   status      JobStatus @default(NEW)
 
+  /// 1 for the first job created in a Bangkok calendar month, 2 for the next…
+  /// Null only if the column was added without running the backfill.
+  monthlySeq Int?
+
   storylineSendDate DateTime?
   shootDate         DateTime?
   draftSendDate     DateTime?
