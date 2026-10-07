@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
 import { resolvePosts } from "@/lib/post-attachments";
-import { notifyOtherUsers } from "@/lib/push";
+import { notifyOtherUsers, notifyUsersByRole } from "@/lib/push";
 import { deleteFile } from "@/lib/storage";
 import type { BriefItemType, TimelinePostType } from "@/generated/prisma/enums";
 
@@ -79,7 +79,31 @@ export async function addTimelinePost(formData: FormData) {
     })),
   });
 
+  // Fairy follows each job through Fome's progress updates.
+  if (user.role === "CREATOR") {
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    const text = resolved.find((item) => item.kind === "TEXT")?.body;
+    await notifyUsersByRole(
+      "MANAGER",
+      {
+        title: job ? `${job.brandName} · ${job.title}` : "อัปเดตความคืบหน้า",
+        body: text
+          ? `${user.name}: ${truncate(text, TIMELINE_PREVIEW_LENGTH)}`
+          : `${user.name} อัปเดตความคืบหน้างาน`,
+        url: `/jobs/${jobId}`,
+      },
+      user.id,
+    );
+  }
+
   revalidatePath(`/jobs/${jobId}`);
+}
+
+const TIMELINE_PREVIEW_LENGTH = 100;
+
+function truncate(text: string, max: number) {
+  const chars = Array.from(text.trim());
+  return chars.length > max ? `${chars.slice(0, max).join("")}…` : chars.join("");
 }
 
 export async function deleteTimelinePost(formData: FormData) {
